@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<!-- STATS -->
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <div class="stat-card cyan">
+      <div style="font-size:.72rem;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px;">TOTAL UNITS</div>
+      <div class="stat-number cyan">{{ total_products }}</div>
+      <div style="font-size:.8rem;color:var(--text-dim);margin-top:8px;">Individual units in system</div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="stat-card yellow">
+      <div style="font-size:.72rem;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px;">TOTAL TRANSACTIONS</div>
+      <div class="stat-number yellow">{{ total_txns }}</div>
+      <div style="font-size:.8rem;color:var(--text-dim);margin-top:8px;">Audit log entries</div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="stat-card green">
+      <div style="font-size:.72rem;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px;">YOUR ROLE</div>
+      <div class="stat-number green" style="font-size:1.4rem;padding-top:8px;">{{ session.role }}</div>
+      <div style="font-size:.8rem;color:var(--text-dim);margin-top:8px;">Access level</div>
+    </div>
+  </div>
+</div>
+
+<!-- SUPPLY CHAIN -->
+<div class="ac-card mb-4">
+  <div style="font-size:.72rem;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:16px;">Supply Chain Flow</div>
+  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+    {% for step in ['Manufacturer','Distributor','Retailer','Customer'] %}
+    <div class="chain-step {% if session.role == step %}active-step{% endif %}">
+      <i class="bi bi-{% if step=='Manufacturer' %}factory{% elif step=='Distributor' %}truck{% elif step=='Retailer' %}shop{% else %}person-fill{% endif %}"
+         style="color:{% if session.role==step %}var(--primary){% else %}var(--text-dim){% endif %}"></i>
+      <span style="font-size:.85rem;font-weight:600;{% if session.role==step %}color:var(--primary){% else %}color:var(--text-dim){% endif %}">{{ step }}</span>
+    </div>
+    {% if not loop.last %}<div class="chain-arrow">→</div>{% endif %}
+    {% endfor %}
+  </div>
+</div>
+
+<!-- PRODUCT BATCHES -->
+{% if session.role == 'Manufacturer' %}
+<div class="ac-card">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+    <div style="font-size:.72rem;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;">
+      Product Batches
+      <span style="color:var(--primary);margin-left:8px;">{{ products|length }}</span>
+    </div>
+
+  </div>
+
+  <!-- CATEGORY FILTER -->
+  {% set endpoint = 'dashboard' %}
+  {% set extra_params = {} %}
+  {% include 'category_filter.html' with context %}
+
+  {% if products %}
+  <div style="overflow-x:auto;">
+    <table class="ac-table" style="min-width:700px;">
+      <thead>
+        <tr>
+          <th>Image</th>
+          <th>Product Name</th>
+          <th>Brand</th>
+          <th>Category</th>
+          <th>Manufacturer</th>
+          <th>Total Units</th>
+          <th>Batches</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in products %}
+        <tr>
+          <td>
+            {% if p.image %}
+            <img src="{{ url_for('static', filename='product_images/' + p.image) }}"
+                 style="width:48px;height:48px;object-fit:contain;background:var(--surface2);border-radius:6px;border:1px solid var(--border);"
+                 onerror="this.style.display='none'"/>
+            {% else %}
+            <div style="width:48px;height:48px;background:var(--surface2);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;">📦</div>
+            {% endif %}
+          </td>
+          <td style="font-weight:600;">{{ p.name }}</td>
+          <td style="color:var(--text-dim);">{{ p.brand }}</td>
+          <td>
+            <a href="{{ url_for('dashboard', category=p.category) }}"
+               style="font-size:.75rem;padding:3px 10px;border-radius:20px;background:rgba(0,229,255,0.08);color:var(--primary);text-decoration:none;">
+              {{ p.category }}
+            </a>
+          </td>
+          <td><span class="mono" style="font-size:.8rem;">{{ p.manufacturer }}</span></td>
+          <td>
+            <span style="font-size:.78rem;font-weight:700;padding:2px 10px;border-radius:12px;background:rgba(0,229,255,0.10);color:var(--primary);">
+              {{ p.total_units }}
+            </span>
+          </td>
+          <td>
+            <span style="font-size:.78rem;font-weight:700;padding:2px 10px;border-radius:12px;background:rgba(179,136,255,0.10);color:#b388ff;">
+              {{ p.batch_count }} batch{{ 'es' if p.batch_count != 1 else '' }}
+            </span>
+          </td>
+          <td>
+            <a href="{{ url_for('batch_units', puid=p.latest_puid) }}"
+               style="padding:4px 12px;border:1px solid var(--primary);color:var(--primary);border-radius:6px;font-size:.78rem;font-weight:700;text-decoration:none;">
+              View Batches
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if total_pages > 1 %}
+  <div style="display:flex;justify-content:center;align-items:center;gap:8px;margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
+    {% if page > 1 %}
+    <a href="?page={{ page-1 }}&category={{ active_cat }}" style="padding:6px 14px;border:1px solid var(--border);border-radius:6px;color:var(--text-dim);text-decoration:none;font-size:.84rem;">← Prev</a>
+    {% endif %}
+    {% for p in range(1, total_pages + 1) %}
+    <a href="?page={{ p }}&category={{ active_cat }}"
+       style="padding:6px 12px;border-radius:6px;font-size:.84rem;text-decoration:none;
+              {% if p == page %}background:var(--primary);color:#000;font-weight:700;{% else %}border:1px solid var(--border);color:var(--text-dim);{% endif %}">
+      {{ p }}
+    </a>
+    {% endfor %}
+    {% if page < total_pages %}
+    <a href="?page={{ page+1 }}&category={{ active_cat }}" style="padding:6px 14px;border:1px solid var(--border);border-radius:6px;color:var(--text-dim);text-decoration:none;font-size:.84rem;">Next →</a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% else %}
+  <div style="text-align:center;padding:60px;color:var(--text-dim);">
+    <i class="bi bi-inbox" style="font-size:3rem;display:block;margin-bottom:12px;"></i>
+    {% if active_cat %}
+      No products found in <strong style="color:var(--text);">{{ active_cat }}</strong>.
+      <br><a href="{{ url_for('dashboard') }}" style="color:var(--primary);font-weight:700;">Clear filter →</a>
+    {% else %}
+      No products registered yet.
+
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}

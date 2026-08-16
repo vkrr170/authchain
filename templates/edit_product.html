@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% block title %}Edit Product Price{% endblock %}
+{% block page_title %}Edit Product Price{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-6">
+
+    <!-- Product identity card (read-only) -->
+    <div class="ac-card mb-4">
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+        {% if product.image %}
+        <img src="{{ url_for('static', filename='product_images/' + product.image) }}"
+             style="width:72px;height:72px;object-fit:contain;background:var(--surface2);border-radius:10px;border:1px solid var(--border);"
+             onerror="this.style.display='none'"/>
+        {% else %}
+        <div style="width:72px;height:72px;background:var(--surface2);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:2rem;">📦</div>
+        {% endif %}
+        <div style="flex:1;">
+          <div style="font-size:.7rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px;">
+            {{ product.category }}
+          </div>
+          <div style="font-size:1.2rem;font-weight:800;margin-bottom:2px;">{{ product.name }}</div>
+          <div style="color:var(--text-dim);font-size:.85rem;">{{ product.brand }}</div>
+        </div>
+      </div>
+
+      <!-- Read-only fields grid -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:20px;">
+        {% for label, value in [
+          ('SUID',        product.suid or product.uid),
+          ('PUID',        product.puid or '—'),
+          ('Batch',       product.batch),
+          ('Mfg Date',    product.mfg_date),
+          ('Exp Date',    product.exp_date),
+          ('Manufacturer',product.manufacturer)
+        ] %}
+        <div style="background:var(--surface2);border-radius:8px;padding:10px 12px;">
+          <div style="font-size:.66rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;">{{ label }}</div>
+          <div style="font-family:'Space Mono',monospace;font-size:.78rem;color:var(--text-dim);">{{ value }}</div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div style="margin-top:14px;font-size:.78rem;color:var(--text-dim);">
+        <i class="bi bi-lock-fill me-1"></i>Product identity, batch, and dates are immutable.
+      </div>
+    </div>
+
+    <!-- Price edit form -->
+    <div class="ac-card">
+      <div style="font-size:.72rem;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:20px;">
+        <i class="bi bi-pencil-fill me-2"></i>Update Price Per Unit
+      </div>
+
+      <form method="POST">
+        <div class="mb-4">
+          <label class="form-label">Price Per Unit (₹) *</label>
+          <div style="position:relative;max-width:260px;">
+            <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);font-weight:700;color:var(--text-dim);font-family:'Space Mono',monospace;">₹</span>
+            <input type="number" name="price_per_unit" class="form-control" step="0.01" min="0"
+                   value="{{ product.price_per_unit }}" required
+                   style="padding-left:30px;font-size:1.3rem;font-weight:700;font-family:'Space Mono',monospace;"/>
+          </div>
+          <div style="font-size:.74rem;color:var(--text-dim);margin-top:6px;">
+            This updates the price for <strong style="color:var(--text);">all units</strong> in this batch (PUID: {{ product.puid or product.batch }}).
+          </div>
+        </div>
+
+        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+          <button type="submit" class="btn-primary-ac">
+            <i class="bi bi-check2-circle me-2"></i>Save Price
+          </button>
+          <a href="{{ url_for('product_details', suid=product.suid or product.uid) }}" class="btn-outline-ac">Cancel</a>
+          <a href="{{ url_for('dashboard') }}" class="btn-outline-ac">Dashboard</a>
+        </div>
+      </form>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

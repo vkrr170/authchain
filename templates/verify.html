@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+{% block title %}Verification Result{% endblock %}
+{% block page_title %}Verification Result{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-7">
+
+    <!-- RESULT BANNER -->
+    {% if fail_reason %}
+    <div style="background:rgba(255,61,113,0.1);border:2px solid var(--accent);border-radius:14px;padding:24px;margin-bottom:24px;text-align:center;">
+      <div style="font-size:3rem;margin-bottom:8px;">{{ fail_emoji | default('🚨') }}</div>
+      <div style="font-size:1.4rem;font-weight:800;color:var(--accent);margin-bottom:6px;">{{ fail_heading | default('Verification Failed') }}</div>
+      <div style="color:var(--text-dim);font-size:.9rem;">{{ fail_reason }}</div>
+    </div>
+    {% elif is_recalled %}
+    <div style="background:rgba(255,165,0,0.1);border:2px solid var(--warning);border-radius:14px;padding:24px;margin-bottom:24px;text-align:center;">
+      <div style="font-size:3rem;margin-bottom:8px;">⚠️</div>
+      <div style="font-size:1.4rem;font-weight:800;color:var(--warning);margin-bottom:6px;">Product Recalled</div>
+      <div style="color:var(--text-dim);font-size:.9rem;">This batch has been recalled by the manufacturer. Do NOT consume or use this product.</div>
+    </div>
+    {% elif is_expired %}
+    <div style="background:rgba(255,215,64,0.08);border:2px solid rgba(255,215,64,0.5);border-radius:14px;padding:24px;margin-bottom:24px;text-align:center;">
+      <div style="font-size:3rem;margin-bottom:8px;">⏰</div>
+      <div style="font-size:1.4rem;font-weight:800;color:#ffd740;margin-bottom:6px;">Product Expired</div>
+      <div style="color:var(--text-dim);font-size:.9rem;">This product's expiry date ({{ product.exp_date }}) has passed. Do not consume.</div>
+    </div>
+    {% else %}
+    <div style="background:rgba(0,230,118,0.1);border:2px solid var(--success);border-radius:14px;padding:24px;margin-bottom:24px;text-align:center;">
+      <div style="font-size:3rem;margin-bottom:8px;">✅</div>
+      <div style="font-size:1.4rem;font-weight:800;color:var(--success);margin-bottom:6px;">Product Verified — Genuine</div>
+      <div style="color:var(--text-dim);font-size:.9rem;">All checks passed: PUID ✓ Not Recalled ✓ Not Expired ✓ Blockchain Ledger ✓ Delivered to Customer ✓</div>
+    </div>
+    {% endif %}
+
+    <!-- PRODUCT CARD -->
+    <div class="ac-card">
+      <div style="display:flex;gap:24px;flex-wrap:wrap;">
+        <div style="flex-shrink:0;">
+          {% if product.image and product.image != 'default.png' %}
+          <img src="{{ url_for('static', filename='product_images/' + product.image) }}"
+               style="width:140px;height:140px;object-fit:contain;background:var(--surface2);border-radius:12px;border:1px solid var(--border);" alt="Product"/>
+          {% else %}
+          <div style="width:140px;height:140px;background:var(--surface2);border-radius:12px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:3rem;">📦</div>
+          {% endif %}
+        </div>
+        <div style="flex:1;">
+          <!-- PUID + SUID display -->
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+            <div style="background:rgba(0,229,255,0.08);border:1px solid rgba(0,229,255,0.2);border-radius:6px;padding:4px 10px;">
+              <span style="font-size:.65rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;">PUID </span>
+              <span class="mono" style="color:var(--primary);font-size:.78rem;font-weight:700;">{{ product.puid or '—' }}</span>
+            </div>
+            <div style="background:rgba(0,230,118,0.08);border:1px solid rgba(0,230,118,0.2);border-radius:6px;padding:4px 10px;">
+              <span style="font-size:.65rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;">SUID </span>
+              <span class="mono" style="color:var(--success);font-size:.78rem;font-weight:700;">{{ product.suid or product.uid }}</span>
+            </div>
+          </div>
+          <h3 style="font-size:1.4rem;font-weight:800;margin-bottom:4px;">{{ product.name }}</h3>
+          <div style="color:var(--text-dim);margin-bottom:16px;">{{ product.brand }} · {{ product.category }}</div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            {% set owner_display = (product.owner_fullname ~ ' (' ~ product.owner_role ~ ')' ~ ((' · ' ~ product.owner_company) if product.owner_company else '')) if product.owner_fullname else product.owner %}
+            {% for label, value in [
+              ('Manufacturer', product.manufacturer),
+              ('Current Owner', owner_display),
+              ('Batch', product.batch),
+              ('Price Per Unit', '₹' ~ product.price_per_unit),
+              ('Mfg Date', product.mfg_date),
+              ('Exp Date', product.exp_date)
+            ] %}
+            <div>
+              <div style="font-size:.72rem;color:var(--text-dim);letter-spacing:.5px;text-transform:uppercase;">{{ label }}</div>
+              <div style="font-weight:600;font-size:.88rem;margin-top:2px;">{{ value }}</div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+        <div>
+          <span style="font-size:.75rem;color:var(--text-dim);">Total Scans: </span>
+          {% set scan_color = "var(--accent)" if product.scans > 1 else "var(--success)" %}
+          <span class="mono" style="font-size:1.1rem;font-weight:700;color:{{ scan_color }};">{{ product.scans }}</span>
+        </div>
+        <div style="display:flex;gap:10px;">
+          {% set suid_val = product.suid or product.uid %}
+          <a href="{{ url_for('product_details', suid=suid_val) }}" class="btn-outline-ac">View Details</a>
+          <a href="{{ url_for('scan') }}" class="btn-primary-ac" style="text-decoration:none;color:#000;font-family:'Syne',sans-serif;font-weight:700;padding:8px 20px;border-radius:8px;">Scan Another</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

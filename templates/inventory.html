@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+{% block title %}Products{% endblock %}
+{% block page_title %}Products{% endblock %}
+
+{% block head %}
+<style>
+  .ac-table th { font-weight: 700; color: var(--text-dim); text-transform: uppercase; font-size: .75rem; letter-spacing: 1px; padding: 12px; border-bottom: 1px solid var(--border); }
+  .ac-table td { padding: 16px 12px; vertical-align: middle; border-bottom: 1px solid var(--surface2); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ac-card">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+    <div style="font-size:.72rem;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;">
+      {% if session.role == 'Customer' %}Scan History{% else %}Your Products{% endif %}
+      <span style="color:var(--primary);margin-left:8px;">{{ products|length }}</span>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;">
+      <form method="GET" action="{{ url_for('inventory') }}" style="display:flex; gap:8px; margin: 0;">
+        <input type="hidden" name="category" value="{{ request.args.get('category', '') }}">
+        <input type="text" name="search" class="form-control" placeholder="Search by name or brand..." value="{{ request.args.get('search', '') }}" style="background:var(--surface2); color:var(--text); border:1px solid var(--border); border-radius:8px; font-size:.84rem; padding:6px 12px; width:220px;">
+        <button type="submit" class="btn-primary-ac" style="padding:6px 12px; border-radius:8px; font-size:.84rem;"><i class="bi bi-search"></i></button>
+      </form>
+    </div>
+  </div>
+  
+  <!-- CATEGORY FILTER -->
+  {% set endpoint = 'inventory' %}
+  {% set extra_params = {'search': request.args.get('search', '')} if request.args.get('search') else {} %}
+  {% include 'category_filter.html' with context %}
+  
+  {% if products %}
+  <div class="table-responsive">
+    <table class="ac-table" style="min-width: 800px; width: 100%;">
+      <thead>
+        <tr>
+          <th>Image</th>
+          <th>Product</th>
+          <th>Category</th>
+          <th>Batches</th>
+          <th>Total Units</th>
+          <th>Price</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in products %}
+        <tr>
+          <td>
+            {% if p.image %}
+            <img src="{{ url_for('static', filename='product_images/' + p.image) }}" style="width:48px;height:48px;object-fit:contain;background:var(--surface2);border-radius:6px;border:1px solid var(--border);" onerror="this.style.display='none'"/>
+            {% else %}
+            <div style="width:48px;height:48px;background:var(--surface2);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;">📦</div>
+            {% endif %}
+          </td>
+          <td>
+            <strong style="display:block;font-size:.9rem;">{{ p.name }}</strong>
+            <span style="font-size:.75rem;color:var(--text-dim);">{{ p.brand }}</span>
+          </td>
+          <td><a href="{{ url_for('inventory', category=p.category) }}" style="font-size:.75rem;padding:3px 10px;border-radius:20px;background:rgba(0,229,255,0.08);color:var(--primary);text-decoration:none;">{{ p.category }}</a></td>
+          <td><span class="mono">{{ p.batch_count }}</span></td>
+          <td><span class="badge bg-secondary">{{ p.total_units }}</span></td>
+          <td><span class="mono">₹{{ p.price_per_unit }}</span></td>
+          <td>
+            {% if p.latest_puid %}
+            <a href="{{ url_for('batch_units', puid=p.latest_puid, owned_only=1) }}"
+               style="padding:4px 12px;border:1px solid var(--primary);color:var(--primary);border-radius:6px;font-size:.78rem;font-weight:700;text-decoration:none;">
+              View Details
+            </a>
+            {% else %}
+            <span style="font-size:.75rem;color:var(--text-dim);">No Batches</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div style="text-align:center;padding:60px;color:var(--text-dim);">
+    <i class="bi bi-box-seam" style="font-size:3rem;display:block;margin-bottom:12px;"></i>
+    No products manufactured yet.
+    <div style="margin-top: 16px;">
+      <a href="{{ url_for('blueprints') }}" class="btn-primary-ac">Go to Blueprints</a>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

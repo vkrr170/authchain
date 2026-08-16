@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+{% block title %}Recall Batch{% endblock %}
+{% block page_title %}Recall Batch{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-6">
+
+    <!-- Warning banner -->
+    <div style="background:rgba(255,61,113,0.1);border:2px solid var(--accent);border-radius:16px;padding:28px;margin-bottom:28px;text-align:center;">
+      <div style="font-size:3.5rem;margin-bottom:12px;">⚠️</div>
+      <div style="font-size:1.5rem;font-weight:900;color:var(--accent);margin-bottom:8px;">Confirm Batch Recall</div>
+      <div style="font-size:.9rem;color:var(--text-dim);line-height:1.7;">
+        This action is <strong style="color:var(--text);">irreversible</strong>. Every unit in this batch will be
+        marked as <span style="color:var(--accent);font-weight:700;">RECALLED</span> and a permanent entry will be
+        written to the blockchain ledger. Any Customer who scans a unit will see a recall warning.
+      </div>
+    </div>
+
+    <!-- Product info -->
+    <div class="ac-card mb-4">
+      <div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;">
+        <div style="flex-shrink:0;">
+          {% if product.image %}
+          <img src="{{ url_for('static', filename='product_images/' + product.image) }}"
+               style="width:80px;height:80px;object-fit:contain;background:var(--surface2);border-radius:10px;border:1px solid var(--border);"
+               onerror="this.style.display='none'" />
+          {% else %}
+          <div style="width:80px;height:80px;background:var(--surface2);border-radius:10px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:2rem;">📦</div>
+          {% endif %}
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:.72rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">{{ product.category }}</div>
+          <div style="font-size:1.3rem;font-weight:800;margin-bottom:4px;">{{ product.name }}</div>
+          <div style="color:var(--text-dim);font-size:.88rem;margin-bottom:12px;">{{ product.brand }}</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div>
+              <div style="font-size:.68rem;color:var(--text-dim);text-transform:uppercase;">PUID</div>
+              <div class="mono" style="color:var(--primary);font-weight:700;font-size:.82rem;">{{ product.puid }}</div>
+            </div>
+            <div>
+              <div style="font-size:.68rem;color:var(--text-dim);text-transform:uppercase;">Batch</div>
+              <div class="mono" style="font-weight:700;font-size:.82rem;">{{ product.batch }}</div>
+            </div>
+            <div>
+              <div style="font-size:.68rem;color:var(--text-dim);text-transform:uppercase;">Units Affected</div>
+              <div style="font-weight:700;color:var(--accent);font-size:1rem;">{{ unit_count }}</div>
+            </div>
+            <div>
+              <div style="font-size:.68rem;color:var(--text-dim);text-transform:uppercase;">Expiry Date</div>
+              <div style="font-weight:700;font-size:.88rem;">{{ product.exp_date }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Confirm form -->
+    <div class="ac-card">
+      <div style="font-size:.82rem;color:var(--text-dim);margin-bottom:20px;line-height:1.6;">
+        You are about to recall <strong style="color:var(--accent);">{{ unit_count }} unit(s)</strong>
+        from batch <strong style="color:var(--text);">{{ product.batch }}</strong>.
+        All units — regardless of where they are in the supply chain — will be marked recalled.
+      </div>
+
+      <div style="display:flex;gap:12px;flex-wrap:wrap;">
+        <button type="button"
+                id="recallBtn"
+                style="background:var(--accent);color:#fff;padding:10px 28px;border-radius:8px;border:none;font-weight:800;font-family:'Syne',sans-serif;font-size:.95rem;cursor:pointer;">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>Confirm Recall
+        </button>
+        <a href="{{ url_for('batch_units', puid=puid) }}" class="btn-outline-ac">
+          Cancel
+        </a>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+<script>
+document.getElementById('recallBtn').addEventListener('click', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('recallBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Preparing...';
+
+  try {
+    if (!window.ethereum) throw new Error("MetaMask is not installed. Please install it to proceed.");
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    await provider.send("eth_requestAccounts", []);
+    const signer = await provider.getSigner();
+
+    const response = await fetch('/api/recall/prepare', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ puid: '{{ puid }}' })
+    });
+    
+    const data = await response.json();
+    if (!data.ok) throw new Error(data.error || "Preparation failed.");
+    
+    btn.innerHTML = '<i class="bi bi-pen-fill me-2"></i>Sign in MetaMask';
+    
+    // Request a personal_sign as proof of authorization by the manufacturer
+    const message = `RECALL BATCH: {{ puid }}\nUnits: ${data.blocks.length}\nAction: RECALLED`;
+    const signature = await signer.signMessage(message);
+    
+    btn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Confirming...';
+    
+    const confirmRes = await fetch('/api/recall/confirm', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        blocks: data.blocks,
+        tx_hash: signature
+      })
+    });
+    
+    const confirmData = await confirmRes.json();
+    if (!confirmData.ok) throw new Error(confirmData.error);
+    
+    window.location.href = confirmData.redirect;
+    
+  } catch (err) {
+    console.error(err);
+    alert(err.message || "An error occurred.");
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-2"></i>Confirm Recall';
+  }
+});
+</script>
+{% endblock %}

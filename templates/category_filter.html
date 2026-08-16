@@ -1,0 +1,21 @@
+{# Reusable category filter bar
+   Params: categories, active_cat, cat_counts, endpoint (url_for endpoint name)
+   Extra kwargs passed through as url params via extra_params dict #}
+<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:20px;">
+  <span style="font-size:.7rem;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;white-space:nowrap;padding-right:4px;">Filter:</span>
+  <a href="{{ url_for(endpoint, **extra_params) }}"
+     style="padding:5px 14px;border-radius:20px;font-size:.78rem;font-weight:700;text-decoration:none;transition:all .2s;
+            {% if not active_cat %}background:var(--primary);color:#000;{% else %}border:1px solid var(--border);color:var(--text-dim);{% endif %}">
+    All <span style="font-size:.7rem;opacity:.7;">({{ cat_counts.values()|sum }})</span>
+  </a>
+  {% for cat in categories %}
+  {% set count = cat_counts.get(cat, 0) %}
+  {% if count > 0 or active_cat == cat %}
+  <a href="{{ url_for(endpoint, category=cat, **extra_params) }}"
+     style="padding:5px 14px;border-radius:20px;font-size:.78rem;font-weight:700;text-decoration:none;transition:all .2s;
+            {% if active_cat == cat %}background:var(--primary);color:#000;{% else %}border:1px solid var(--border);color:var(--text-dim);{% endif %}">
+    {{ cat }} {% if count %}<span style="font-size:.7rem;opacity:.7;">({{ count }})</span>{% endif %}
+  </a>
+  {% endif %}
+  {% endfor %}
+</div>

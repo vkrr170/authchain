@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+{% block title %}Search{% endblock %}
+{% block page_title %}Product Search{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="ac-card mb-4">
+      <div style="font-size:.75rem;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:16px;">Search by PUID or SUID</div>
+      <form method="POST">
+        <div style="display:flex;gap:12px;">
+          <input type="text" name="uid" class="form-control mono"
+                 placeholder="Enter PUID (P-XXXXXXXX) or SUID (S-XXXXXXXX)..."
+                 style="text-transform:uppercase;flex:1;" required/>
+          <button type="submit" class="btn-primary-ac" style="white-space:nowrap;">
+            <i class="bi bi-search me-2"></i>Search
+          </button>
+        </div>
+        <div style="font-size:.75rem;color:var(--text-dim);margin-top:6px;">
+          Search by SUID to find a specific unit, or PUID to find the product family.
+        </div>
+      </form>
+    </div>
+
+    {% if product %}
+    <div class="ac-card">
+      <div style="display:flex;gap:24px;flex-wrap:wrap;">
+        <div>
+          {% if product.image and product.image != 'default.png' %}
+          <img src="{{ url_for('static', filename='product_images/' + product.image) }}"
+               style="width:130px;height:130px;object-fit:contain;background:var(--surface2);border-radius:12px;border:1px solid var(--border);" alt=""/>
+          {% else %}
+          <div style="width:130px;height:130px;background:var(--surface2);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:3rem;">📦</div>
+          {% endif %}
+        </div>
+        <div style="flex:1;">
+          <!-- PUID + SUID badges -->
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+            <div style="background:rgba(0,229,255,0.08);border:1px solid rgba(0,229,255,0.2);border-radius:6px;padding:4px 10px;">
+              <span style="font-size:.65rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;">PUID </span>
+              <span class="mono" style="color:var(--primary);font-size:.78rem;font-weight:700;">{{ product.puid or '—' }}</span>
+            </div>
+            <div style="background:rgba(0,230,118,0.08);border:1px solid rgba(0,230,118,0.2);border-radius:6px;padding:4px 10px;">
+              <span style="font-size:.65rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;">SUID </span>
+              <span class="mono" style="color:var(--success);font-size:.78rem;font-weight:700;">{{ product.suid or product.uid }}</span>
+            </div>
+          </div>
+
+          <h3 style="font-weight:800;font-size:1.4rem;margin-bottom:4px;">{{ product.name }}</h3>
+          <div style="color:var(--text-dim);margin-bottom:16px;">{{ product.brand }} · {{ product.category }}</div>
+
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:16px;">
+            {% for label, value in [
+              ('Batch', product.batch),
+              ('Mfg Date', product.mfg_date),
+              ('Exp Date', product.exp_date),
+              ('Price Per Unit', '₹' ~ product.price_per_unit),
+              ('Manufacturer', product.manufacturer),
+              ('Owner', product.owner)
+            ] %}
+            <div style="background:var(--surface2);padding:10px;border-radius:8px;">
+              <div style="font-size:.68rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px;">{{ label }}</div>
+              <div style="font-weight:600;font-size:.84rem;margin-top:2px;">{{ value }}</div>
+            </div>
+            {% endfor %}
+          </div>
+
+          <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+            <div>
+              <span style="font-size:.75rem;color:var(--text-dim);">Scan Count: </span>
+              <span class="mono" style="font-weight:700;color:{% if product.scans > 1 %}var(--accent){% else %}var(--success){% endif %};">{{ product.scans }}</span>
+              {% if product.scans > 1 %}
+              <span style="font-size:.72rem;color:var(--accent);margin-left:6px;">⚠ Possible Counterfeit</span>
+              {% endif %}
+            </div>
+            {% set suid_val = product.suid or product.uid %}
+            <a href="{{ url_for('product_details', suid=suid_val) }}" class="btn-outline-ac">View Full Details</a>
+            {% set puid_val = product.puid or product.batch %}
+            <a href="{{ url_for('batch_units', puid=puid_val) }}" class="btn-outline-ac">View All Units</a>
+          </div>
+        </div>
+      </div>
+      {% if product.description %}
+      <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);color:var(--text-dim);font-size:.88rem;">{{ product.description }}</div>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

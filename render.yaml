@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: authchain
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: QR_SECRET_KEY
+        generateValue: true
+      - key: MONGO_URI
+        sync: false
+      - key: WEB3_PROVIDER_URI
+        sync: false
+      - key: ETH_CHAIN_ID
+        value: 11155111
+      - key: ETH_NETWORK_NAME
+        value: Sepolia
+      - key: METAMASK_CHAIN_ID_HEX
+        value: "0xaa36a7"
+      - key: AUTHCHAIN_CONTRACT_ADDRESS
+        sync: false
+      - key: ETH_PRIVATE_KEY
+        sync: false
+      - key: ADMIN_USERNAME
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: PYTHON_VERSION
+        value: 3.11.0

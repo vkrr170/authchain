@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+{% block title %}Product Details{% endblock %}
+{% block page_title %}Product Details{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+
+  <!-- BATCH SELECTOR (shown when multiple batches exist) -->
+  {% if all_batches|length > 1 %}
+  <div class="col-12">
+    <div class="ac-card" style="padding:14px 20px;">
+      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+        <div style="font-size:.72rem;letter-spacing:1.5px;color:var(--text-dim);text-transform:uppercase;white-space:nowrap;">
+          <i class="bi bi-layers me-1"></i>Batch
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          {% for b in all_batches %}
+          <a href="{{ url_for('batch_units', puid=b.puid) }}"
+             style="padding:5px 14px;border-radius:8px;font-size:.8rem;font-weight:700;text-decoration:none;font-family:'Space Mono',monospace;
+                    {% if b.batch == product.batch %}background:var(--primary);color:#000;{% else %}border:1px solid var(--border);color:var(--text-dim);{% endif %}">
+            {{ b.batch }}
+            <span style="font-size:.7rem;opacity:.75;">({{ b.unit_count }} units)</span>
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="col-lg-5">
+    <div class="ac-card mb-4">
+      {% if product.image and product.image != 'default.png' %}
+      <img src="{{ url_for('static', filename='product_images/' + product.image) }}"
+           style="width:100%;height:260px;object-fit:contain;background:var(--surface2);border-radius:10px;margin-bottom:20px;" alt="Product"
+           onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
+      <div style="width:100%;height:200px;background:var(--surface2);border-radius:10px;display:none;align-items:center;justify-content:center;font-size:4rem;margin-bottom:20px;">📦</div>
+      {% else %}
+      <div style="width:100%;height:200px;background:var(--surface2);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:4rem;margin-bottom:20px;">📦</div>
+      {% endif %}
+
+      <!-- QR CODE — named by suid -->
+      <div style="text-align:center;">
+        <div style="font-size:.72rem;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:12px;">QR Code (Scan to Verify)</div>
+        {% set qr_id = product.suid or product.uid %}
+        <img src="{{ url_for('serve_qr', suid=qr_id) }}"
+             style="width:180px;height:180px;border-radius:10px;border:1px solid var(--border);padding:8px;background:#fff;" alt="QR Code"
+             onerror="this.outerHTML='<div style=\'width:180px;height:180px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);display:flex;align-items:center;justify-content:center;color:var(--text-dim);font-size:.8rem;\'>QR unavailable</div>'"/>
+        <div style="margin-top:10px;display:flex;flex-direction:column;gap:4px;">
+          <div>
+            <span style="font-size:.65rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;">PUID: </span>
+            <span class="mono" style="font-size:.72rem;color:var(--primary);">{{ product.puid or '—' }}</span>
+          </div>
+          <div>
+            <span style="font-size:.65rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;">SUID: </span>
+            <span class="mono" style="font-size:.72rem;color:var(--success);">{{ product.suid or product.uid }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-7">
+    <div class="ac-card mb-4">
+      <div style="font-size:.75rem;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:6px;">{{ product.category }}</div>
+      <h2 style="font-size:1.8rem;font-weight:800;margin-bottom:4px;">{{ product.name }}</h2>
+      <div style="color:var(--text-dim);margin-bottom:20px;">{{ product.brand }}</div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;">
+        {% set qr_id = product.suid or product.uid %}
+        {% for label, value, color in [
+          ('PUID', product.puid or '—', 'var(--primary)'),
+          ('SUID', product.suid or product.uid, 'var(--success)'),
+          ('Token ID', product.token_id or '—', 'var(--text)'),
+          ('Batch', product.batch, 'var(--text)'),
+          ('Manufacture Date', product.mfg_date, 'var(--text)'),
+          ('Expiry Date', product.exp_date, 'var(--text)'),
+          ('Price Per Unit', '₹' ~ product.price_per_unit, 'var(--success)'),
+          ('Batch Units', batch_count|string, 'var(--primary)'),
+          ('Scan Count', product.scans|string, 'var(--accent)' if product.scans > 1 else 'var(--success)')
+        ] %}
+        <div style="background:var(--surface2);border-radius:8px;padding:12px;">
+          <div style="font-size:.7rem;color:var(--text-dim);letter-spacing:.5px;text-transform:uppercase;margin-bottom:4px;">{{ label }}</div>
+          <div style="font-weight:700;color:{{ color }};font-family:'Space Mono',monospace;font-size:.88rem;word-break:break-all;">{{ value }}</div>
+        </div>
+        {% endfor %}
+      </div>
+
+      {% if product.description %}
+      <div style="margin-bottom:20px;">
+        <div style="font-size:.72rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Description</div>
+        <div style="color:var(--text);font-size:.9rem;line-height:1.6;">{{ product.description }}</div>
+      </div>
+      {% endif %}
+
+      <div style="padding-top:16px;border-top:1px solid var(--border);">
+        <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:16px;">
+          <div style="flex:1;background:var(--surface2);border-radius:8px;padding:12px;">
+            <div style="font-size:.7rem;color:var(--text-dim);margin-bottom:4px;">MANUFACTURER</div>
+            <div style="font-weight:700;font-family:'Space Mono',monospace;font-size:.88rem;">{{ product.manufacturer }}</div>
+          </div>
+          <div style="flex:1;background:var(--surface2);border-radius:8px;padding:12px;">
+            <div style="font-size:.7rem;color:var(--text-dim);margin-bottom:4px;">CURRENT OWNER</div>
+            <div style="font-weight:700;font-family:'Space Mono',monospace;font-size:.88rem;color:var(--primary);">{{ product.owner }}</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          {% set puid_val = product.puid or product.batch %}
+          <a href="{{ url_for('batch_units', puid=puid_val) }}" class="btn-outline-ac">← All Units</a>
+          <a href="{{ url_for('dashboard') }}" class="btn-outline-ac">Dashboard</a>
+        </div>
+      </div>
+    </div>
+
+    {% if txns %}
+    <div class="ac-card">
+      <div style="font-size:.75rem;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:16px;">Transfer History</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        {% for t in txns %}
+        <div style="display:flex;align-items:center;gap:12px;padding:10px;background:var(--surface2);border-radius:8px;flex-wrap:wrap;">
+          <i class="bi bi-arrow-right-circle" style="color:var(--primary);"></i>
+          <span class="mono" style="font-size:.8rem;color:var(--text-dim);">{{ t.from_user }}</span>
+          <i class="bi bi-arrow-right" style="color:var(--text-dim);"></i>
+          <span class="mono" style="font-size:.8rem;font-weight:700;">{{ t.to_user }}</span>
+          {% if t.action %}
+          <span style="font-size:.7rem;padding:2px 8px;border-radius:10px;background:rgba(179,136,255,0.12);color:#b388ff;font-weight:700;">
+            {{ t.action }}
+          </span>
+          {% endif %}
+          <span style="margin-left:auto;font-size:.75rem;color:var(--text-dim);">{{ t.timestamp | ts }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

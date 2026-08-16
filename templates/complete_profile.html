@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet"/>
+  <style>
+    :root{--primary:#00e5ff;--accent:#ff3d71;--bg:#080c14;--surface:#0d1421;--surface2:#131d2e;--border:#1e2d42;--text:#c8d8e8;--text-dim:#5a7a9a;}
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:40px 20px;}
+    .auth-box{width:100%;max-width:560px;background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:40px;}
+    .brand{font-family:'Space Mono',monospace;font-size:1.3rem;font-weight:700;color:var(--primary);letter-spacing:3px;margin-bottom:4px;}
+    .brand span{color:var(--accent);}
+    h2{font-size:1.6rem;font-weight:800;margin-bottom:4px;margin-top:16px;}
+    p{color:var(--text-dim);font-size:0.88rem;margin-bottom:28px;}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+    .form-group{margin-bottom:16px;}
+    label{display:block;font-size:0.75rem;font-weight:600;color:var(--text-dim);margin-bottom:6px;letter-spacing:.5px;text-transform:uppercase;}
+    input,select{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:10px 14px;font-family:'Syne',sans-serif;font-size:0.88rem;outline:none;transition:.2s;}
+    input:focus,select:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(0,229,255,0.1);}
+    input:disabled {background: rgba(255,255,255,0.05); color: var(--text-dim); cursor: not-allowed;}
+    select option{background:var(--surface2);}
+    .btn-reg{width:100%;background:var(--primary);color:#000;border:none;border-radius:8px;padding:12px;font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;cursor:pointer;transition:.2s;margin-top:8px;}
+    .btn-reg:hover{background:#00bcd4;}
+    .alert{padding:10px 14px;border-radius:8px;margin-bottom:16px;font-size:0.85rem;font-weight:600;}
+    .alert-danger{background:rgba(255,61,113,0.12);color:#ff3d71;}
+    .alert-success{background:rgba(0,230,118,0.12);color:#00e676;}
+    .phone-wrap{display:flex;gap:8px;}
+    .phone-wrap select{width:130px;flex-shrink:0;}
+    .phone-wrap input{flex:1;}
+    .phone-error{font-size:0.75rem;color:#ff3d71;margin-top:4px;display:block;min-height:16px;}
+    input.error{border-color:#ff3d71 !important;}
+  </style>
+</head>
+<body>
+<div class="auth-box">
+  <div class="brand">AUTH<span>CHAIN</span></div>
+  <h2>Complete Profile</h2>
+  <p>Just a few more details to complete your registration.</p>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in messages %}
+      <div class="alert alert-{{ cat }}">{{ msg }}</div>
+    {% endfor %}
+  {% endwith %}
+  <form method="POST" action="{{ url_for('complete_profile') }}" id="reg-form">
+    <div class="grid2">
+      <div class="form-group">
+        <label>Full Name</label>
+        <input type="text" name="fullname" value="{{ google_info.name }}" readonly disabled/>
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" name="email" value="{{ google_info.email }}" readonly disabled/>
+      </div>
+      <div class="form-group">
+        <label>Username</label>
+        <input type="text" name="username" placeholder="johndoe" required/>
+      </div>
+      <div class="form-group">
+        <label>Phone</label>
+        <div class="phone-wrap">
+          <select id="country-code">
+            <option value="+91">🇮🇳 +91</option>
+            <option value="+1">🇺🇸 +1</option>
+            <option value="+44">🇬🇧 +44</option>
+            <option value="+61">🇦🇺 +61</option>
+            <option value="+971">🇦🇪 +971</option>
+            <option value="+65">🇸🇬 +65</option>
+            <option value="+60">🇲🇾 +60</option>
+            <option value="+49">🇩🇪 +49</option>
+            <option value="+33">🇫🇷 +33</option>
+            <option value="+81">🇯🇵 +81</option>
+            <option value="+86">🇨🇳 +86</option>
+            <option value="+55">🇧🇷 +55</option>
+            <option value="+27">🇿🇦 +27</option>
+            <option value="+92">🇵🇰 +92</option>
+            <option value="+880">🇧🇩 +880</option>
+            <option value="+94">🇱🇰 +94</option>
+            <option value="+977">🇳🇵 +977</option>
+          </select>
+          <input type="text" id="phone-number" placeholder="9876543210" maxlength="10" inputmode="numeric" required/>
+        </div>
+        <input type="hidden" name="phone" id="phone-hidden"/>
+        <span class="phone-error" id="phone-error"></span>
+      </div>
+      <div class="form-group">
+        <label>Role</label>
+        <select name="role" required>
+          <option value="">Select Role</option>
+          <option value="Manufacturer">Manufacturer</option>
+          <option value="Distributor">Distributor</option>
+          <option value="Retailer">Retailer</option>
+          <option value="Customer">Customer</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Company <span class="req" id="company-req" style="color:var(--accent)">*</span></label>
+        <input type="text" name="company" id="company" placeholder="Company Name" required/>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Address</label>
+      <input type="text" name="address" placeholder="123 Street, City" required/>
+    </div>
+    <button type="submit" class="btn-reg">Complete Setup →</button>
+  </form>
+</div>
+<script>
+  const phoneInput   = document.getElementById('phone-number');
+  const phoneHidden  = document.getElementById('phone-hidden');
+  const phoneError   = document.getElementById('phone-error');
+  const countryCode  = document.getElementById('country-code');
+  const form         = document.getElementById('reg-form');
+  const roleSelect   = document.querySelector('select[name="role"]');
+  const compReq      = document.getElementById('company-req');
+  const companyInput = document.getElementById('company');
+
+  roleSelect.addEventListener('change', () => {
+    if (roleSelect.value === 'Customer') {
+      compReq.style.display = 'none';
+      companyInput.required = false;
+    } else {
+      compReq.style.display = 'inline';
+      companyInput.required = true;
+    }
+  });
+
+  phoneInput.addEventListener('input', () => {
+    phoneInput.value = phoneInput.value.replace(/\D/g, '');
+  });
+
+  form.addEventListener('submit', (e) => {
+    let valid = true;
+    const digits = phoneInput.value.trim();
+    if (digits.length !== 10) {
+      phoneError.textContent = 'Enter a valid 10-digit phone number';
+      phoneInput.classList.add('error');
+      valid = false;
+    } else {
+      phoneError.textContent = '';
+      phoneInput.classList.remove('error');
+      phoneHidden.value = countryCode.value + digits;
+    }
+    if (!valid) e.preventDefault();
+  });
+</script>
+</body>
+</html>

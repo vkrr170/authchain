@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% block title %}Add Product{% endblock %}
+{% block page_title %}Add New Product{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="ac-card">
+      <div style="font-size:.75rem;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:24px;">Product Registration</div>
+      <form method="POST" enctype="multipart/form-data">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Product Name *</label>
+            <input type="text" name="name" class="form-control" placeholder="e.g. Medicine Bottle" required/>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Brand *</label>
+            <input type="text" name="brand" class="form-control" placeholder="e.g. ABC Pharma" required/>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Category *</label>
+            <select name="category" class="form-select" required>
+              <option value="">Select Category</option>
+              {% for cat in categories %}
+              <option value="{{ cat }}">{{ cat }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Batch Number *</label>
+            <input type="text" name="batch" class="form-control" placeholder="e.g. B2025-01" required/>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Manufacture Date *</label>
+            <input type="date" name="mfg_date" class="form-control" required/>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Expiry Date *</label>
+            <input type="date" name="exp_date" class="form-control" required/>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Price Per Unit *</label>
+            <input type="text" name="price_per_unit" class="form-control" placeholder="e.g. 150.00 (₹)" required/>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Quantity *</label>
+            <input type="number" name="quantity" class="form-control" placeholder="e.g. 100" min="1" value="1" required/>
+          </div>
+          <div class="col-12">
+            <label class="form-label">Description</label>
+            <textarea name="description" class="form-control" rows="3" placeholder="Brief description of the product..." style="resize:vertical;"></textarea>
+          </div>
+          <div class="col-12">
+            <label class="form-label">Product Image</label>
+            <input type="file" name="image" class="form-control" accept="image/*" id="imageInput"/>
+            <div id="imagePreview" style="margin-top:12px;display:none;">
+              <img id="previewImg" style="max-height:140px;border-radius:10px;border:1px solid var(--border);"/>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:28px;padding-top:20px;border-top:1px solid var(--border);display:flex;gap:12px;">
+          <button type="submit" class="btn-primary-ac">
+            <i class="bi bi-plus-circle me-2"></i>Register Product & Generate QR
+          </button>
+          <a href="{{ url_for('dashboard') }}" class="btn-outline-ac">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('imageInput').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      document.getElementById('previewImg').src = ev.target.result;
+      document.getElementById('imagePreview').style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+  }
+});
+</script>
+{% endblock %}

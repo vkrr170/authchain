@@ -1,0 +1,407 @@
+{% extends 'base.html' %}
+{% block title %}Transfer Product{% endblock %}
+{% block page_title %}Transfer Product{% endblock %}
+
+{% block content %}
+
+<div class="row g-4">
+
+  <!-- LEFT: Transfer form panel -->
+  <div class="col-lg-4">
+    <div class="ac-card" style="position:sticky;top:80px;">
+      <div style="font-size:.72rem;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:20px;">
+        Transfer Ownership
+      </div>
+
+      <!-- Recovery banner (shown if a pending transfer is detected) -->
+      <div id="recoveryBanner" style="display:none;margin-bottom:16px;padding:12px 14px;background:rgba(255,215,64,0.1);border:1px solid rgba(255,215,64,0.4);border-radius:10px;">
+        <div style="font-size:.8rem;font-weight:700;color:#ffd740;margin-bottom:6px;"><i class="bi bi-exclamation-triangle-fill me-1"></i>Pending Transfer Detected</div>
+        <div style="font-size:.76rem;color:var(--text-dim);margin-bottom:10px;">It looks like a previous transfer was confirmed on-chain but the database wasn't updated. Click below to recover.</div>
+        <button id="recoverBtn" type="button" style="width:100%;background:#ffd740;color:#000;border:none;border-radius:8px;padding:9px;font-weight:700;font-size:.85rem;cursor:pointer;"><i class="bi bi-arrow-repeat me-1"></i>Recover Transfer</button>
+        <button id="dismissRecovery" type="button" style="width:100%;background:transparent;color:var(--text-dim);border:1px solid var(--border);border-radius:8px;padding:7px;font-size:.8rem;cursor:pointer;margin-top:6px;">Dismiss</button>
+      </div>
+
+      {% if next_roles %}
+
+      <!-- Role badge strip -->
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:20px;flex-wrap:wrap;">
+        <span style="font-size:.72rem;padding:4px 10px;border-radius:20px;font-weight:700;
+          background:rgba(0,229,255,0.15);color:var(--primary);border:1px solid var(--primary);">
+          {{ session.role }}
+        </span>
+        <span style="color:var(--text-dim);font-size:.7rem;">→</span>
+        {% for nr in next_roles %}
+        <span class="target-role-badge" data-role="{{ nr }}"
+          style="font-size:.72rem;padding:4px 10px;border-radius:20px;font-weight:700;cursor:pointer;
+          border:1px solid var(--border);color:var(--text-dim);transition:.15s;">
+          {{ nr }}
+        </span>
+        {% if not loop.last %}<span style="color:var(--text-dim);font-size:.7rem;">/</span>{% endif %}
+        {% endfor %}
+      </div>
+
+      <!-- Recipient selector with search -->
+      <div class="mb-3" id="recipientWrap">
+        <label class="form-label" style="font-size:0.8rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;display:block;">Recipient *</label>
+        <input type="text" id="recipientSearch" class="form-control mb-2" placeholder="Search by name, username, or company..." style="background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:10px 14px;font-size:0.88rem;" />
+        <select id="recipientSelect" class="form-select">
+          <option value="">— Select recipient —</option>
+        </select>
+        <div id="noUsersWarning" style="display:none;margin-top:8px;padding:10px;background:rgba(255,215,64,0.08);border:1px solid rgba(255,215,64,0.3);border-radius:8px;font-size:.8rem;color:var(--warning);">
+          <i class="bi bi-exclamation-triangle me-1"></i>No <span id="noUsersRole"></span> accounts registered yet.
+        </div>
+      </div>
+
+      <!-- Live totals -->
+      <div style="background:var(--surface2);border-radius:8px;padding:12px;margin-bottom:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <span style="font-size:.82rem;color:var(--text-dim);">Total units to transfer</span>
+          <span id="totalCount" style="font-family:'Space Mono',monospace;font-weight:700;color:var(--primary);font-size:1.1rem;">0</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:.82rem;color:var(--text-dim);">Total value</span>
+          <span id="totalValue" style="font-family:'Space Mono',monospace;font-weight:700;color:var(--success);font-size:.95rem;">₹0</span>
+        </div>
+      </div>
+
+      <button type="button" id="transferBtn" class="btn-primary-ac w-100" disabled style="opacity:.4;cursor:not-allowed;">
+        <i class="bi bi-arrow-left-right me-2"></i>Transfer
+      </button>
+
+      {% else %}
+      <div style="text-align:center;padding:32px;color:var(--text-dim);">
+        <i class="bi bi-check-circle-fill" style="font-size:2rem;color:var(--success);display:block;margin-bottom:12px;"></i>
+        Your role ({{ session.role }}) is the final step in the supply chain.
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- RIGHT: Products with qty inputs -->
+  <div class="col-lg-8">
+    <div class="ac-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+        <div style="font-size:.72rem;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;">
+          My Stock
+          <span style="color:var(--primary);margin-left:8px;">{{ products|length }} product line(s)</span>
+        </div>
+      </div>
+
+      <!-- Category filter -->
+      {% set endpoint = 'transfer_product' %}
+      {% set extra_params = {} %}
+      {% include 'category_filter.html' with context %}
+
+      {% if products %}
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:8px;">
+        {% for p in products %}
+        <div class="product-row" style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;transition:border-color .2s;">
+
+          <!-- Image -->
+          <div style="flex-shrink:0;">
+            {% if p.image %}
+            <img src="{{ url_for('static', filename='product_images/' + p.image) }}"
+                 style="width:52px;height:52px;object-fit:contain;background:var(--surface);border-radius:8px;border:1px solid var(--border);"
+                 onerror="this.style.display='none'"/>
+            {% else %}
+            <div style="width:52px;height:52px;background:var(--surface);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;">📦</div>
+            {% endif %}
+          </div>
+
+          <!-- Info -->
+          <div style="flex:1;min-width:140px;">
+            <div style="font-weight:700;font-size:.9rem;">{{ p.name }}</div>
+            <div style="font-size:.76rem;color:var(--text-dim);">{{ p.brand }} · {{ p.category }}</div>
+            <div style="margin-top:4px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+              <span style="font-size:.72rem;font-family:'Space Mono',monospace;color:var(--text-dim);">Batch: {{ p.batch }}</span>
+              <span style="font-size:.72rem;background:rgba(0,229,255,0.08);color:var(--primary);padding:1px 8px;border-radius:10px;">
+                {{ p.available }} in stock
+              </span>
+              <span style="font-size:.72rem;color:var(--success);font-weight:600;">₹{{ p.price_per_unit }}/unit</span>
+            </div>
+          </div>
+
+          <!-- Qty input -->
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;">
+            <label style="font-size:.68rem;color:var(--text-dim);letter-spacing:.5px;text-transform:uppercase;">Qty</label>
+            <input type="number"
+                   name="qty_{{ p.puid }}"
+                   min="0" max="{{ p.available }}" value="0"
+                   data-price="{{ p.price_per_unit }}"
+                   data-max="{{ p.available }}"
+                   class="qty-input"
+                   style="width:74px;background:var(--surface);border:1px solid var(--border);color:var(--text);
+                          border-radius:8px;padding:7px 10px;font-family:'Space Mono',monospace;font-size:.95rem;
+                          text-align:center;"
+                   form="transferForm"
+                   oninput="onQtyChange(this)"
+                   onfocus="this.style.borderColor='var(--primary)'"
+                   onblur="this.style.borderColor=parseInt(this.value)>0?'var(--primary)':'var(--border)'"/>
+          </div>
+
+        </div>
+        {% endfor %}
+      </div>
+
+      {% else %}
+      <div style="text-align:center;padding:60px;color:var(--text-dim);">
+        <i class="bi bi-inbox" style="font-size:3rem;display:block;margin-bottom:12px;"></i>
+        {% if active_cat %}
+          No stock in <strong style="color:var(--text);">{{ active_cat }}</strong>.
+          <br><a href="{{ url_for('transfer_product') }}" style="color:var(--primary);font-weight:700;">Clear filter →</a>
+        {% else %}
+          No units assigned to you yet.
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+<script>
+function onQtyChange(input) {
+  const max = parseInt(input.dataset.max) || 0;
+  let val = parseInt(input.value) || 0;
+  if (val < 0) val = 0;
+  if (val > max) { val = max; input.value = val; }
+  input.value = val;
+  input.style.borderColor = val > 0 ? 'var(--primary)' : 'var(--border)';
+  const row = input.closest('.product-row');
+  if (row) row.style.borderColor = val > 0 ? 'var(--primary)' : 'var(--border)';
+  recalc();
+}
+
+const usersByRole     = {{ next_role_users_by_role | tojson }};
+let allUsers = [];
+for (const role in usersByRole) {
+  usersByRole[role].forEach(u => {
+    u._role = role;
+    allUsers.push(u);
+  });
+}
+
+const recipientSelect = document.getElementById('recipientSelect');
+const recipientSearch = document.getElementById('recipientSearch');
+const recipientWrap   = document.getElementById('recipientWrap');
+const noUsersWarning  = document.getElementById('noUsersWarning');
+const noUsersRoleEl   = document.getElementById('noUsersRole');
+const btn             = document.getElementById('transferBtn');
+
+function updateBtn() {
+  const hasUser  = recipientSelect && recipientSelect.value;
+  const hasUnits = parseInt(document.getElementById('totalCount').textContent || '0') > 0;
+  if (btn) {
+    const ok = !!(hasUser && hasUnits);
+    btn.disabled      = !ok;
+    btn.style.opacity = ok ? '1' : '0.4';
+    btn.style.cursor  = ok ? 'pointer' : 'not-allowed';
+    btn.innerHTML     = '<i class="bi bi-arrow-left-right me-2"></i>Transfer';
+  }
+}
+
+function recalc() {
+  let totalUnits = 0, totalValue = 0;
+  document.querySelectorAll('.qty-input').forEach(inp => {
+    const qty   = parseInt(inp.value)           || 0;
+    const price = parseFloat(inp.dataset.price) || 0;
+    totalUnits += qty;
+    totalValue += qty * price;
+  });
+  document.getElementById('totalCount').textContent = totalUnits;
+  document.getElementById('totalValue').textContent = '₹' + totalValue.toLocaleString('en-IN');
+  updateBtn();
+}
+
+function renderRecipients(filterText = '') {
+  if (!recipientSelect) return;
+  recipientSelect.innerHTML = '<option value="">— Select recipient —</option>';
+  const lowerFilter = filterText.toLowerCase();
+  let count = 0;
+  
+  allUsers.forEach(u => {
+    const searchString = `${u.fullname} ${u.username} ${u.company || ''} ${u._role}`.toLowerCase();
+    if (!filterText || searchString.includes(lowerFilter)) {
+      const opt = document.createElement('option');
+      opt.value = u.username;
+      opt.dataset.role = u._role;
+      opt.textContent = `${u.fullname} ${u.company ? '- ' + u.company : ''}`;
+      recipientSelect.appendChild(opt);
+      count++;
+    }
+  });
+  
+  if (count === 0 && filterText === '') {
+     if (noUsersWarning) noUsersWarning.style.display = 'block';
+     const targetRoles = Object.keys(usersByRole).join(' or ');
+     if (noUsersRoleEl) noUsersRoleEl.textContent = targetRoles || 'available';
+  } else {
+     if (noUsersWarning) noUsersWarning.style.display = 'none';
+  }
+}
+
+renderRecipients('');
+
+if (recipientSearch) recipientSearch.addEventListener('input', (e) => {
+  renderRecipients(e.target.value);
+  updateBtn();
+});
+
+if (recipientSelect) recipientSelect.addEventListener('change', updateBtn);
+document.querySelectorAll('.qty-input').forEach(inp => inp.addEventListener('input', recalc));
+recalc();
+
+if (btn) btn.addEventListener('click', async function() {
+  const toUser = recipientSelect ? recipientSelect.value : '';
+  if (!toUser) return alert('Select a recipient.');
+  const selectedOpt = recipientSelect.options[recipientSelect.selectedIndex];
+  const toRole = selectedOpt ? selectedOpt.dataset.role : '';
+  if (!toRole) return alert('Recipient role is missing.');
+  const items = [];
+  document.querySelectorAll('.qty-input').forEach(inp => {
+    const qty = parseInt(inp.value) || 0;
+    if (qty > 0) items.push({ puid: inp.name.replace('qty_', ''), qty });
+  });
+  if (!items.length) return alert('Select at least one unit to transfer.');
+  if (!window.ethereum) return alert('Please connect MetaMask first.');
+  
+  let accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+  let activeWallet = accounts[0].toLowerCase();
+  const sessionWallet = (window.currentSessionWallet || '').toLowerCase();
+  
+  if (!sessionWallet) {
+    return alert('Please click "Connect MetaMask" in the top right corner first.');
+  }
+  
+  if (activeWallet !== sessionWallet) {
+    try {
+      await window.ethereum.request({
+        method: 'wallet_requestPermissions',
+        params: [{ eth_accounts: {} }]
+      });
+      accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      activeWallet = accounts[0].toLowerCase();
+    } catch (err) {
+      console.error(err);
+    }
+    if (activeWallet !== sessionWallet) {
+      return alert(`MetaMask is using a different wallet (${activeWallet.slice(0,6)}...${activeWallet.slice(-4)}) than your connected profile wallet (${sessionWallet.slice(0,6)}...${sessionWallet.slice(-4)}). Please switch accounts in your MetaMask extension to match.`);
+    }
+  }
+  btn.disabled = true; btn.style.opacity = '0.6';
+  const origHTML = btn.innerHTML;
+  btn.innerHTML = '<i class="spinner-border spinner-border-sm me-2"></i> Preparing…';
+  try {
+    const prepRes = await fetch('/api/transfer/prepare', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ to_user: toUser, to_role: toRole, items })
+    }).then(r => r.json());
+    if (!prepRes.ok) throw new Error(prepRes.error);
+    const blocks = prepRes.blocks;
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    const signer   = await provider.getSigner();
+    const CONTRACT_ADDRESS = '{{ authchain_contract_address }}';
+    const abi = [
+      "function transferProductBatch(address to, uint256[] tokenIds, tuple(string blockId, string puid, string suid, string action, string fromUser, string toUser, bytes32 blockHash, string previousHash, bytes signature)[] data) external",
+      "error ERC721IncorrectOwner(address sender, uint256 tokenId, address owner)",
+      "error ERC721NonexistentToken(uint256 tokenId)",
+      "error ERC721InvalidReceiver(address receiver)",
+      "error ERC721InvalidSender(address sender)"
+    ];
+    let lastTxHash = '';
+    if (CONTRACT_ADDRESS) {
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, abi, signer);
+      const chunkSize = 50;
+      for (let i = 0; i < blocks.length; i += chunkSize) {
+        const chunk = blocks.slice(i, i + chunkSize);
+        btn.innerHTML = `<i class="spinner-border spinner-border-sm me-2"></i> Transferring ${Math.floor(i/chunkSize) + 1}/${Math.ceil(blocks.length/chunkSize)}...`;
+        
+        const toWallet = chunk[0].to_wallet;
+        const tokenIds = chunk.map(b => b.token_id);
+        const dataArray = chunk.map(b => [
+          b.block_id, b.puid, b.suid, b.action, b.from_user, b.to_user, '0x' + b.block_hash, b.previous_hash, b.signature
+        ]);
+
+        const tx = await contract.transferProductBatch(toWallet, tokenIds, dataArray);
+
+        // ── Save pending state to localStorage immediately after tx is broadcast ──
+        localStorage.setItem('pendingTransfer', JSON.stringify({ tx_hash: tx.hash, blocks }));
+
+        btn.innerHTML = `<i class="spinner-border spinner-border-sm me-2"></i> Confirming ${Math.floor(i/chunkSize) + 1}/${Math.ceil(blocks.length/chunkSize)}...`;
+        
+        let receipt = null;
+        while (receipt === null) {
+          receipt = await provider.getTransactionReceipt(tx.hash);
+          if (receipt === null) {
+            await new Promise(r => setTimeout(r, 2000));
+          }
+        }
+        if (receipt.status === 0) {
+          localStorage.removeItem('pendingTransfer');
+          throw new Error('Blockchain transaction was reverted. No tokens were transferred.');
+        }
+        lastTxHash = tx.hash;
+      }
+    } else {
+      lastTxHash = '0x' + Array.from({length:64}, () => Math.floor(Math.random()*16).toString(16)).join('');
+    }
+    btn.innerHTML = '<i class="spinner-border spinner-border-sm me-2"></i> Finalising…';
+    const confRes = await fetch('/api/transfer/confirm', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ blocks, tx_hash: lastTxHash })
+    }).then(r => r.json());
+    if (!confRes.ok) throw new Error(confRes.error);
+    localStorage.removeItem('pendingTransfer');  // Clear on success
+    btn.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i> Transfer Complete!';
+    btn.style.background = 'var(--success, #22c55e)';
+    btn.style.opacity = '1';
+    setTimeout(() => { window.location.reload(); }, 1500);
+  } catch (err) {
+    console.error(err);
+    alert('Transfer failed: ' + (err.reason || err.message));
+    btn.disabled = false; btn.style.opacity = '1'; btn.innerHTML = origHTML;
+  }
+});
+
+// ── Recovery logic: check localStorage for a pending transfer on page load ──
+(function checkPendingTransfer() {
+  const pending = localStorage.getItem('pendingTransfer');
+  if (!pending) return;
+  let state;
+  try { state = JSON.parse(pending); } catch(e) { localStorage.removeItem('pendingTransfer'); return; }
+  if (!state.tx_hash || !state.blocks) { localStorage.removeItem('pendingTransfer'); return; }
+
+  const banner   = document.getElementById('recoveryBanner');
+  const recoverBtn = document.getElementById('recoverBtn');
+  const dismissBtn = document.getElementById('dismissRecovery');
+  if (banner) banner.style.display = 'block';
+
+  if (dismissBtn) dismissBtn.addEventListener('click', () => {
+    localStorage.removeItem('pendingTransfer');
+    if (banner) banner.style.display = 'none';
+  });
+
+  if (recoverBtn) recoverBtn.addEventListener('click', async () => {
+    recoverBtn.disabled = true;
+    recoverBtn.textContent = 'Recovering…';
+    try {
+      const res = await fetch('/api/transfer/recover', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tx_hash: state.tx_hash, blocks: state.blocks })
+      }).then(r => r.json());
+      if (!res.ok) throw new Error(res.error);
+      localStorage.removeItem('pendingTransfer');
+      alert('Recovery successful! ' + res.message);
+      window.location.reload();
+    } catch (err) {
+      alert('Recovery failed: ' + err.message);
+      recoverBtn.disabled = false;
+      recoverBtn.textContent = 'Retry Recovery';
+    }
+  });
+})();
+</script>
+{% endblock %}

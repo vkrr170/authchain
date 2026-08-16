@@ -1,0 +1,487 @@
+{% extends 'base.html' %}
+{% block title %}My Blueprints{% endblock %}
+{% block page_title %}Blueprints{% endblock %}
+
+{% block content %}
+<div class="ac-card">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+    <div style="font-size:.72rem;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;">
+      Saved Blueprints
+      <span style="color:var(--primary);margin-left:8px;">{{ blueprints|length }}</span>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;">
+      <form method="GET" action="{{ url_for('blueprints') }}" style="display:flex; gap:8px; margin: 0;">
+        <input type="hidden" name="category" value="{{ request.args.get('category', '') }}">
+        <input type="text" name="search" class="form-control" placeholder="Search by name or brand..." value="{{ request.args.get('search', '') }}" style="background:var(--surface2); color:var(--text); border:1px solid var(--border); border-radius:8px; font-size:.84rem; padding:6px 12px; width:220px;">
+        <button type="submit" class="btn-primary-ac" style="padding:6px 12px; border-radius:8px; font-size:.84rem;"><i class="bi bi-search"></i></button>
+      </form>
+      <button class="btn-primary-ac" data-bs-toggle="modal" data-bs-target="#createBlueprintModal" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:8px 18px;border-radius:8px;font-weight:700;font-size:.84rem;font-family:'Syne',sans-serif;">
+        <i class="bi bi-pencil-square me-1"></i> Create Manually
+      </button>
+      <a href="{{ url_for('bulk_create_products') }}"
+         style="background:var(--primary);color:#000;padding:8px 18px;border-radius:8px;text-decoration:none;font-weight:700;font-size:.84rem;font-family:'Syne',sans-serif;">
+        <i class="bi bi-upload me-1"></i> Upload CSV
+      </a>
+    </div>
+  </div>
+
+  <!-- CATEGORY FILTER -->
+  {% set endpoint = 'blueprints' %}
+  {% set extra_params = {'search': request.args.get('search', '')} if request.args.get('search') else {} %}
+  {% include 'category_filter.html' with context %}
+
+  {% if blueprints %}
+  <div style="overflow-x:auto;">
+    <table class="ac-table" style="min-width:700px;">
+      <thead>
+        <tr>
+          <th>Image</th>
+          <th>Product Name</th>
+          <th>Brand</th>
+          <th>Category</th>
+          <th>Price Per Unit</th>
+          <th>Quantity</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for bp in blueprints %}
+        <tr id="row-{{ bp._id }}">
+          <td>
+            {% if bp.image %}
+            <img src="{{ url_for('static', filename='product_images/' + bp.image) }}"
+                 style="width:48px;height:48px;object-fit:contain;background:var(--surface2);border-radius:6px;border:1px solid var(--border);"
+                 onerror="this.style.display='none'"/>
+            {% else %}
+            <div style="width:48px;height:48px;background:var(--surface2);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;">📦</div>
+            {% endif %}
+          </td>
+          <td style="font-weight:600;">{{ bp.name }}</td>
+          <td style="color:var(--text-dim);">{{ bp.brand }}</td>
+          <td>
+            <a href="{{ url_for('blueprints', category=bp.category) }}" style="font-size:.75rem;padding:3px 10px;border-radius:20px;background:rgba(0,229,255,0.08);color:var(--primary);text-decoration:none;">
+              {{ bp.category }}
+            </a>
+          </td>
+          <td><span class="mono">₹{{ bp.price_per_unit }}</span></td>
+          <td>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <input type="number" id="qty-{{ bp._id }}" value="1" min="1" max="10000" class="form-control" style="width:70px;height:32px;padding:4px 8px;font-size:.8rem;" title="Quantity" />
+              <button id="btn-{{ bp._id }}" class="btn-primary-ac" style="padding:4px 12px;font-size:.78rem;border:none;" onclick="manufactureBlueprint('{{ bp._id }}')">
+                 Manufacture
+              </button>
+              <button class="btn-warning" style="padding:4px 12px;font-size:.78rem;border:none;background:var(--warning);color:#000;border-radius:6px;" onclick="openEditBlueprintModal('{{ bp._id }}', '{{ bp.name | replace('\'', '\\\'') }}', '{{ bp.brand | replace('\'', '\\\'') }}', '{{ bp.category }}', '{{ bp.price_per_unit }}', '{{ bp.description | replace('\'', '\\\'') }}', '{{ bp.shelf_life_days }}')">
+                <i class="bi bi-pencil-fill"></i>
+              </button>
+              <button class="btn-danger-ac" style="padding:4px 12px;font-size:.78rem;border:none;" onclick="deleteBlueprint('{{ bp._id }}')">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+            <div id="status-{{ bp._id }}" style="font-size:0.7rem; margin-top:4px; color:var(--text-dim);"></div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div style="text-align:center;padding:60px;color:var(--text-dim);">
+    <i class="bi bi-journal-code" style="font-size:3rem;display:block;margin-bottom:12px;"></i>
+    No blueprints saved yet.
+    <br><a href="{{ url_for('bulk_create_products') }}" style="color:var(--primary);font-weight:700;">Upload your first blueprint (CSV) →</a>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Create Blueprint Modal -->
+<div class="modal fade" id="createBlueprintModal" tabindex="-1" aria-labelledby="createBlueprintModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;">
+      <div class="modal-header" style="border-bottom:1px solid var(--border);">
+        <h5 class="modal-title" id="createBlueprintModalLabel" style="font-family:'Syne',sans-serif;font-weight:700;">Create Blueprint</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="filter:invert(1);"></button>
+      </div>
+      <div class="modal-body">
+        <form id="blueprintForm" enctype="multipart/form-data">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label" style="font-size:0.8rem;color:var(--text-dim);">Product Name *</label>
+              <input type="text" id="bp_name" name="name" class="form-control" required />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" style="font-size:0.8rem;color:var(--text-dim);">Brand *</label>
+              <input type="text" id="bp_brand" name="brand" class="form-control" required />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" style="font-size:0.8rem;color:var(--text-dim);">Category *</label>
+              <input type="text" id="bp_category" name="category" list="category_list" class="form-control" placeholder="Select or type custom category..." required />
+              <datalist id="category_list">
+                {% for cat in categories %}
+                  <option value="{{ cat }}">
+                {% endfor %}
+              </datalist>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" style="font-size:0.8rem;color:var(--text-dim);">Price Per Unit (₹) *</label>
+              <input type="number" id="bp_price" name="price_per_unit" class="form-control" step="0.01" min="0" required />
+            </div>
+            <div class="col-md-6">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <label class="form-label" style="font-size:0.8rem;color:var(--text-dim);margin:0;">Shelf Life *</label>
+                <label style="font-size:0.75rem;color:var(--text-dim);cursor:pointer;margin:0;"><input type="checkbox" name="shelf_life_na" id="bp_shelf_life_na" /> N/A</label>
+              </div>
+              <div style="display:flex;gap:4px;margin-top:8px;">
+                <input type="number" id="bp_shelf_life_y" name="shelf_life_y" class="form-control" min="0" placeholder="Years" style="padding:4px 8px;font-size:0.85rem;" />
+                <input type="number" id="bp_shelf_life_m" name="shelf_life_m" class="form-control" min="0" placeholder="Months" style="padding:4px 8px;font-size:0.85rem;" />
+                <input type="number" id="bp_shelf_life_d" name="shelf_life_d" class="form-control" min="0" placeholder="Days" style="padding:4px 8px;font-size:0.85rem;" />
+              </div>
+            </div>
+            <div class="col-md-12">
+              <label class="form-label" style="font-size:0.8rem;color:var(--text-dim);">Product Image *</label>
+              <input type="file" id="bp_image" name="image" class="form-control" accept=".png,.jpg,.jpeg,.gif,.webp" required />
+            </div>
+            <div class="col-12">
+              <label class="form-label" style="font-size:0.8rem;color:var(--text-dim);">Description *</label>
+              <textarea id="bp_desc" name="description" class="form-control" rows="3" required></textarea>
+            </div>
+          </div>
+          <div style="margin-top:20px;text-align:right;">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="font-size:0.85rem;border-radius:6px;">Cancel</button>
+            <button type="submit" id="saveBpBtn" class="btn-primary-ac" style="padding:6px 16px;font-size:0.85rem;">Save Blueprint</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Blueprint Modal -->
+<div class="modal fade" id="editBlueprintModal" tabindex="-1" aria-labelledby="editBlueprintModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;">
+      <div class="modal-header" style="border-bottom:1px solid var(--border);">
+        <h5 class="modal-title" id="editBlueprintModalLabel" style="font-family:'Syne',sans-serif;font-weight:700;">Edit Blueprint</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="filter:invert(1);"></button>
+      </div>
+      <div class="modal-body">
+        <form id="editBlueprintForm" enctype="multipart/form-data">
+          <input type="hidden" id="edit_bp_id" name="bp_id" />
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label" style="font-size:0.8rem;color:var(--text-dim);">Product Name *</label>
+              <input type="text" id="edit_bp_name" name="name" class="form-control" required />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" style="font-size:0.8rem;color:var(--text-dim);">Brand *</label>
+              <input type="text" id="edit_bp_brand" name="brand" class="form-control" required />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" style="font-size:0.8rem;color:var(--text-dim);">Category *</label>
+              <input type="text" id="edit_bp_category" name="category" list="edit_category_list" class="form-control" placeholder="Select or type custom category..." required />
+              <datalist id="edit_category_list">
+                {% for cat in categories %}
+                  <option value="{{ cat }}">
+                {% endfor %}
+              </datalist>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" style="font-size:0.8rem;color:var(--text-dim);">Price Per Unit (₹) *</label>
+              <input type="number" id="edit_bp_price" name="price_per_unit" class="form-control" step="0.01" min="0" required />
+            </div>
+            <div class="col-md-6">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <label class="form-label" style="font-size:0.8rem;color:var(--text-dim);margin:0;">Shelf Life</label>
+                <label style="font-size:0.75rem;color:var(--text-dim);cursor:pointer;margin:0;"><input type="checkbox" name="shelf_life_na" id="edit_bp_shelf_life_na" /> N/A</label>
+              </div>
+              <div style="display:flex;gap:4px;margin-top:8px;">
+                <input type="number" id="edit_bp_shelf_life_y" name="shelf_life_y" class="form-control" min="0" placeholder="Years" style="padding:4px 8px;font-size:0.85rem;" />
+                <input type="number" id="edit_bp_shelf_life_m" name="shelf_life_m" class="form-control" min="0" placeholder="Months" style="padding:4px 8px;font-size:0.85rem;" />
+                <input type="number" id="edit_bp_shelf_life_d" name="shelf_life_d" class="form-control" min="0" placeholder="Days" style="padding:4px 8px;font-size:0.85rem;" />
+              </div>
+            </div>
+            <div class="col-md-12">
+              <label class="form-label" style="font-size:0.8rem;color:var(--text-dim);">Product Image (Leave blank to keep existing)</label>
+              <input type="file" id="edit_bp_image" name="image" class="form-control" accept=".png,.jpg,.jpeg,.gif,.webp" />
+            </div>
+            <div class="col-12">
+              <label class="form-label" style="font-size:0.8rem;color:var(--text-dim);">Description</label>
+              <textarea id="edit_bp_desc" name="description" class="form-control" rows="3"></textarea>
+            </div>
+          </div>
+          <div style="margin-top:20px;text-align:right;">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="font-size:0.85rem;border-radius:6px;">Cancel</button>
+            <button type="submit" id="updateBpBtn" class="btn-primary-ac" style="padding:6px 16px;font-size:0.85rem;">Update Blueprint</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+<script>
+const CONTRACT_ADDRESS = '{{ authchain_contract_address }}';
+
+let editModalInstance = null;
+function openEditBlueprintModal(id, name, brand, category, price, desc, shelfLife) {
+  document.getElementById('edit_bp_id').value = id;
+  document.getElementById('edit_bp_name').value = name;
+  document.getElementById('edit_bp_brand').value = brand;
+  document.getElementById('edit_bp_category').value = category;
+  document.getElementById('edit_bp_price').value = price;
+  document.getElementById('edit_bp_desc').value = desc;
+  
+  if (shelfLife === 'N/A') {
+    document.getElementById('edit_bp_shelf_life_na').checked = true;
+    document.getElementById('edit_bp_shelf_life_y').value = '';
+    document.getElementById('edit_bp_shelf_life_m').value = '';
+    document.getElementById('edit_bp_shelf_life_d').value = '';
+  } else if (shelfLife && shelfLife !== 'None' && shelfLife !== '') {
+    document.getElementById('edit_bp_shelf_life_na').checked = false;
+    let totalDays = parseInt(shelfLife, 10);
+    if (!isNaN(totalDays)) {
+      let y = Math.floor(totalDays / 365);
+      let rem = totalDays % 365;
+      let m = Math.floor(rem / 30);
+      let d = rem % 30;
+      document.getElementById('edit_bp_shelf_life_y').value = y || '';
+      document.getElementById('edit_bp_shelf_life_m').value = m || '';
+      document.getElementById('edit_bp_shelf_life_d').value = d || '';
+    }
+  } else {
+    document.getElementById('edit_bp_shelf_life_na').checked = false;
+    document.getElementById('edit_bp_shelf_life_y').value = '';
+    document.getElementById('edit_bp_shelf_life_m').value = '';
+    document.getElementById('edit_bp_shelf_life_d').value = '';
+  }
+  
+  // Trigger change to update disabled state
+  document.getElementById('edit_bp_shelf_life_na').dispatchEvent(new Event('change'));
+  
+  if (!editModalInstance) {
+    editModalInstance = new bootstrap.Modal(document.getElementById('editBlueprintModal'));
+  }
+  editModalInstance.show();
+}
+
+// Handle N/A checkboxes disabling number inputs
+function toggleShelfLifeInputs(naId, yId, mId, dId) {
+  const naCheck = document.getElementById(naId);
+  const inputs = [
+    document.getElementById(yId),
+    document.getElementById(mId),
+    document.getElementById(dId)
+  ];
+  naCheck.addEventListener('change', function() {
+    inputs.forEach(inp => {
+      inp.disabled = this.checked;
+      if (this.checked) inp.value = '';
+    });
+  });
+}
+toggleShelfLifeInputs('bp_shelf_life_na', 'bp_shelf_life_y', 'bp_shelf_life_m', 'bp_shelf_life_d');
+toggleShelfLifeInputs('edit_bp_shelf_life_na', 'edit_bp_shelf_life_y', 'edit_bp_shelf_life_m', 'edit_bp_shelf_life_d');
+
+document.getElementById('editBlueprintForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const btn = document.getElementById('updateBpBtn');
+  btn.disabled = true;
+  btn.textContent = 'Updating...';
+
+  const formData = new FormData(this);
+  const bpId = formData.get('bp_id');
+  
+  try {
+    const res = await fetch(`/api/product/edit_blueprint/${bpId}`, {
+      method: 'POST',
+      body: formData
+    }).then(r => r.json());
+
+    if (!res.ok) throw new Error(res.error || 'Failed to update blueprint');
+    
+    window.location.reload();
+  } catch (err) {
+    alert(err.message);
+    btn.disabled = false;
+    btn.textContent = 'Update Blueprint';
+  }
+});
+
+document.getElementById('blueprintForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const btn = document.getElementById('saveBpBtn');
+  btn.disabled = true;
+  btn.textContent = 'Saving...';
+
+  const formData = new FormData(this);
+  
+  try {
+    const res = await fetch('/api/product/blueprint_create', {
+      method: 'POST',
+      body: formData
+    }).then(r => r.json());
+
+    if(res.ok) {
+      location.reload();
+    } else {
+      alert("Error: " + res.error);
+      btn.disabled = false;
+      btn.textContent = 'Save Blueprint';
+    }
+  } catch(err) {
+    console.error(err);
+    alert("Error creating blueprint");
+    btn.disabled = false;
+    btn.textContent = 'Save Blueprint';
+  }
+});
+
+async function manufactureBlueprint(bpId) {
+  if (!window.ethereum) {
+    alert('MetaMask is not installed. Please install MetaMask to manufacture products.');
+    return;
+  }
+
+  let accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+  let activeWallet = accounts[0].toLowerCase();
+  const sessionWallet = (window.currentSessionWallet || '').toLowerCase();
+  
+  if (!sessionWallet) {
+    return alert('Please click "Connect MetaMask" in the top right corner first.');
+  }
+  
+  if (activeWallet !== sessionWallet) {
+    try {
+      await window.ethereum.request({
+        method: 'wallet_requestPermissions',
+        params: [{ eth_accounts: {} }]
+      });
+      accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      activeWallet = accounts[0].toLowerCase();
+    } catch (err) {
+      console.error(err);
+    }
+    if (activeWallet !== sessionWallet) {
+      return alert(`MetaMask is using a different wallet (${activeWallet.slice(0,6)}...${activeWallet.slice(-4)}) than your connected profile wallet (${sessionWallet.slice(0,6)}...${sessionWallet.slice(-4)}). Please switch accounts in your MetaMask extension to match.`);
+    }
+  }
+
+  const btn = document.getElementById(`btn-${bpId}`);
+  const statusDiv = document.getElementById(`status-${bpId}`);
+  const qtyInput = document.getElementById(`qty-${bpId}`);
+  const qty = parseInt(qtyInput.value) || 1;
+
+  btn.disabled = true;
+  statusDiv.textContent = 'Preparing...';
+  statusDiv.style.color = 'var(--primary)';
+
+  try {
+    // 1. Prepare
+    const prepRes = await fetch('/api/product/blueprint_prepare', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bp_id: bpId, quantity: qty })
+    }).then(r => r.json());
+
+    if (!prepRes.ok) throw new Error(prepRes.error);
+    const blocks = prepRes.blocks;
+
+    // 2. MetaMask
+    statusDiv.textContent = 'Sign in MetaMask...';
+    statusDiv.style.color = 'var(--warning)';
+
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    const signer   = await provider.getSigner();
+
+    const mintABI = [
+      "function mintProduct(address to, uint256 tokenId, tuple(string blockId, string puid, string suid, string action, string fromUser, string toUser, bytes32 blockHash, string previousHash, bytes signature) data) external",
+      "function mintProductBatch(address to, uint256[] tokenIds, tuple(string blockId, string puid, string suid, string action, string fromUser, string toUser, bytes32 blockHash, string previousHash, bytes signature)[] data) external"
+    ];
+
+    let lastTxHash = '';
+
+    if (CONTRACT_ADDRESS) {
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, mintABI, signer);
+      const chunkSize = 50;
+      for (let i = 0; i < blocks.length; i += chunkSize) {
+        const chunk = blocks.slice(i, i + chunkSize);
+        statusDiv.textContent = `Minting ${Math.floor(i/chunkSize) + 1}/${Math.ceil(blocks.length/chunkSize)}...`;
+        
+        const toAddress = chunk[0].to_wallet;
+        const tokenIds = chunk.map(b => b.token_id);
+        const dataArray = chunk.map(b => [
+          b.block_id, b.puid, b.suid, b.action,
+          b.from_user, b.to_user,
+          "0x" + b.block_hash, b.previous_hash, b.signature
+        ]);
+        
+        const tx = await contract.mintProductBatch(toAddress, tokenIds, dataArray);
+        statusDiv.textContent = `Confirming tx...`;
+        
+        let receipt = null;
+        while (receipt === null) {
+          receipt = await provider.getTransactionReceipt(tx.hash);
+          if (receipt === null) {
+            await new Promise(r => setTimeout(r, 2000));
+          }
+        }
+        
+        lastTxHash = tx.hash;
+      }
+    } else {
+      lastTxHash = '0x' + Array.from({length: 64}, () => Math.floor(Math.random() * 16).toString(16)).join('');
+    }
+
+    // 3. Confirm
+    statusDiv.textContent = 'Saving...';
+    
+    // We pass the image from the blueprint if needed, but the confirm route pulls from metadata anyway if we let it.
+    // Wait, `/api/product/confirm` relies on `imageFilename` which we don't strictly have here, but `blocks` already have `_image`.
+    const confRes = await fetch('/api/product/confirm', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ blocks, tx_hash: lastTxHash })
+    }).then(r => r.json());
+
+    if (!confRes.ok) throw new Error(confRes.error);
+
+    statusDiv.textContent = `✓ ${qty} unit(s) manufactured!`;
+    statusDiv.style.color = 'var(--success)';
+    
+    // Reset button after 3 seconds
+    setTimeout(() => {
+      btn.disabled = false;
+      statusDiv.textContent = '';
+      qtyInput.value = '1';
+    }, 3000);
+
+  } catch(e) {
+    console.error(e);
+    statusDiv.textContent = 'Error: ' + (e.reason || e.message);
+    statusDiv.style.color = 'var(--accent)';
+    btn.disabled = false;
+  }
+}
+
+async function deleteBlueprint(bpId) {
+  if (!confirm("Are you sure you want to delete this blueprint?")) return;
+  
+  try {
+    const res = await fetch(`/api/product/delete_blueprint/${bpId}`, {
+      method: 'POST'
+    }).then(r => r.json());
+    
+    if (res.ok) {
+      document.getElementById(`row-${bpId}`).remove();
+    } else {
+      alert("Error deleting blueprint");
+    }
+  } catch(e) {
+    console.error(e);
+    alert("Error deleting blueprint");
+  }
+}
+</script>
+{% endblock %}

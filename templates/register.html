@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet"/>
+  <style>
+    :root{--primary:#00e5ff;--accent:#ff3d71;--bg:#080c14;--surface:#0d1421;--surface2:#131d2e;--border:#1e2d42;--text:#c8d8e8;--text-dim:#5a7a9a;--success:#00e676;}
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:40px 20px;}
+    .auth-box{width:100%;max-width:560px;background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:40px;}
+    .brand{font-family:'Space Mono',monospace;font-size:1.3rem;font-weight:700;color:var(--primary);letter-spacing:3px;margin-bottom:4px;}
+    .brand span{color:var(--accent);}
+    h2{font-size:1.6rem;font-weight:800;margin-bottom:4px;margin-top:16px;}
+    p.subtitle{color:var(--text-dim);font-size:0.88rem;margin-bottom:6px;}
+    .required-note{font-size:0.75rem;color:var(--text-dim);margin-bottom:22px;}
+    .required-note span{color:var(--accent);}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+    .form-group{margin-bottom:16px;}
+    label{display:block;font-size:0.75rem;font-weight:600;color:var(--text-dim);margin-bottom:6px;letter-spacing:.5px;text-transform:uppercase;}
+    label .req{color:var(--accent);margin-left:2px;}
+    input,select{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:10px 14px;font-family:'Syne',sans-serif;font-size:0.88rem;outline:none;transition:.2s;}
+    input:focus,select:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(0,229,255,0.1);}
+    input.error,select.error{border-color:var(--accent) !important;box-shadow:0 0 0 3px rgba(255,61,113,0.1);}
+    input.ok{border-color:var(--success) !important;box-shadow:0 0 0 3px rgba(0,230,118,0.08);}
+    select option{background:var(--surface2);}
+    .btn-reg{width:100%;background:var(--primary);color:#000;border:none;border-radius:8px;padding:12px;font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;cursor:pointer;transition:.2s;margin-top:8px;}
+    .btn-reg:hover{background:#00bcd4;}
+    .btn-reg:disabled{background:#1e2d42;color:#5a7a9a;cursor:not-allowed;}
+    .auth-link{text-align:center;margin-top:18px;font-size:0.88rem;color:var(--text-dim);}
+    .auth-link a{color:var(--primary);text-decoration:none;font-weight:700;}
+    .alert{padding:10px 14px;border-radius:8px;margin-bottom:16px;font-size:0.85rem;font-weight:600;}
+    .alert-danger{background:rgba(255,61,113,0.12);color:#ff3d71;}
+    .alert-success{background:rgba(0,230,118,0.12);color:#00e676;}
+    .phone-wrap{display:flex;gap:8px;}
+    .phone-wrap select{width:130px;flex-shrink:0;}
+    .phone-wrap input{flex:1;}
+    .field-msg{font-size:0.75rem;margin-top:4px;display:block;min-height:16px;transition:.2s;}
+    .field-msg.error{color:var(--accent);}
+    .field-msg.ok{color:var(--success);}
+    .field-msg.checking{color:var(--text-dim);}
+  </style>
+</head>
+<body>
+<div class="auth-box">
+  <div class="brand">AUTH<span>CHAIN</span></div>
+  <h2>Create Account</h2>
+  <p class="subtitle">Join the AuthChain network</p>
+  <p class="required-note"><span>*</span> All fields are required</p>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in messages %}
+      <div class="alert alert-{{ cat }}">{{ msg }}</div>
+    {% endfor %}
+  {% endwith %}
+  <form method="POST" id="reg-form">
+    <div class="grid2">
+      <div class="form-group">
+        <label>Full Name<span class="req">*</span></label>
+        <input type="text" name="fullname" id="fullname" placeholder="John Doe" required autocomplete="name"/>
+        <span class="field-msg" id="fullname-msg"></span>
+      </div>
+      <div class="form-group">
+        <label>Username<span class="req">*</span></label>
+        <input type="text" name="username" id="username" placeholder="johndoe" required autocomplete="username"/>
+        <span class="field-msg" id="username-msg"></span>
+      </div>
+      <div class="form-group">
+        <label>Email<span class="req">*</span></label>
+        <input type="email" name="email" id="email" placeholder="john@email.com" required autocomplete="email"/>
+        <span class="field-msg" id="email-msg"></span>
+      </div>
+      <div class="form-group">
+        <label>Phone<span class="req">*</span></label>
+        <div class="phone-wrap">
+          <select id="country-code">
+            <option value="+91">🇮🇳 +91</option>
+            <option value="+1">🇺🇸 +1</option>
+            <option value="+44">🇬🇧 +44</option>
+            <option value="+61">🇦🇺 +61</option>
+            <option value="+971">🇦🇪 +971</option>
+            <option value="+65">🇸🇬 +65</option>
+            <option value="+60">🇲🇾 +60</option>
+            <option value="+49">🇩🇪 +49</option>
+            <option value="+33">🇫🇷 +33</option>
+            <option value="+81">🇯🇵 +81</option>
+            <option value="+86">🇨🇳 +86</option>
+            <option value="+55">🇧🇷 +55</option>
+            <option value="+27">🇿🇦 +27</option>
+            <option value="+92">🇵🇰 +92</option>
+            <option value="+880">🇧🇩 +880</option>
+            <option value="+94">🇱🇰 +94</option>
+            <option value="+977">🇳🇵 +977</option>
+          </select>
+          <input type="text" id="phone-number" placeholder="9876543210" maxlength="10" inputmode="numeric" required/>
+        </div>
+        <input type="hidden" name="phone" id="phone-hidden"/>
+        <span class="field-msg" id="phone-msg"></span>
+      </div>
+      <div class="form-group">
+        <label>Company<span class="req" id="company-req">*</span></label>
+        <input type="text" name="company" id="company" placeholder="Company Name"/>
+        <span class="field-msg" id="company-msg"></span>
+      </div>
+      <div class="form-group">
+        <label>Role<span class="req">*</span></label>
+        <select name="role" id="role" required>
+          <option value="">Select Role</option>
+          <option value="Manufacturer">Manufacturer</option>
+          <option value="Distributor">Distributor</option>
+          <option value="Retailer">Retailer</option>
+          <option value="Customer">Customer</option>
+        </select>
+        <span class="field-msg" id="role-msg"></span>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Address<span class="req">*</span></label>
+      <input type="text" name="address" id="address" placeholder="123 Street, City" required/>
+      <span class="field-msg" id="address-msg"></span>
+    </div>
+    <div class="grid2">
+      <div class="form-group">
+        <label>Password<span class="req">*</span></label>
+        <input type="password" name="password" id="password" placeholder="••••••••" required autocomplete="new-password"/>
+        <span class="field-msg" id="password-msg"></span>
+      </div>
+      <div class="form-group">
+        <label>Confirm Password<span class="req">*</span></label>
+        <input type="password" name="confirm" id="confirm" placeholder="••••••••" required autocomplete="new-password"/>
+        <span class="field-msg" id="confirm-msg"></span>
+      </div>
+    </div>
+    <button type="submit" class="btn-reg" id="submit-btn">Create Account →</button>
+  </form>
+  <div class="auth-link">Already have an account? <a href="/login">Sign In</a></div>
+</div>
+<script>
+  // ── Element references ──────────────────────────────────
+  const form        = document.getElementById('reg-form');
+  const submitBtn   = document.getElementById('submit-btn');
+
+  const fullnameInput  = document.getElementById('fullname');
+  const usernameInput  = document.getElementById('username');
+  const emailInput     = document.getElementById('email');
+  const phoneInput     = document.getElementById('phone-number');
+  const phoneHidden    = document.getElementById('phone-hidden');
+  const countryCode    = document.getElementById('country-code');
+  const companyInput   = document.getElementById('company');
+  const roleSelect     = document.getElementById('role');
+  const addressInput   = document.getElementById('address');
+  const passwordInput  = document.getElementById('password');
+  const confirmInput   = document.getElementById('confirm');
+
+  // ── Helper: set field state ─────────────────────────────
+  function setFieldState(input, msgEl, state, message) {
+    input.classList.remove('error', 'ok');
+    msgEl.classList.remove('error', 'ok', 'checking');
+    if (state === 'error') {
+      input.classList.add('error');
+      msgEl.classList.add('error');
+    } else if (state === 'ok') {
+      input.classList.add('ok');
+      msgEl.classList.add('ok');
+    } else if (state === 'checking') {
+      msgEl.classList.add('checking');
+    }
+    msgEl.textContent = message || '';
+  }
+
+  // ── AJAX duplicate check ────────────────────────────────
+  let debounceTimers = {};
+  function checkDuplicate(field, value, inputEl, msgEl, okMsg) {
+    clearTimeout(debounceTimers[field]);
+    if (!value) return;
+    setFieldState(inputEl, msgEl, 'checking', 'Checking availability…');
+    debounceTimers[field] = setTimeout(() => {
+      fetch('/check_field', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({field, value})
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.exists) {
+          setFieldState(inputEl, msgEl, 'error', `This ${field} is already registered.`);
+        } else {
+          setFieldState(inputEl, msgEl, 'ok', okMsg);
+        }
+      })
+      .catch(() => setFieldState(inputEl, msgEl, '', ''));
+    }, 600);
+  }
+
+  // ── Username check ──────────────────────────────────────
+  usernameInput.addEventListener('blur', () => {
+    const v = usernameInput.value.trim();
+    if (!v) { setFieldState(usernameInput, document.getElementById('username-msg'), 'error', 'Username is required.'); return; }
+    checkDuplicate('username', v, usernameInput, document.getElementById('username-msg'), '✓ Username available');
+  });
+
+  // ── Email check ─────────────────────────────────────────
+  emailInput.addEventListener('blur', () => {
+    const v = emailInput.value.trim();
+    const pat = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!v) { setFieldState(emailInput, document.getElementById('email-msg'), 'error', 'Email is required.'); return; }
+    if (!pat.test(v)) { setFieldState(emailInput, document.getElementById('email-msg'), 'error', 'Enter a valid email address.'); return; }
+    checkDuplicate('email', v, emailInput, document.getElementById('email-msg'), '✓ Email available');
+  });
+
+  // ── Phone: digits only + duplicate check ────────────────
+  phoneInput.addEventListener('input', () => {
+    phoneInput.value = phoneInput.value.replace(/\D/g, '');
+  });
+  function buildPhone() {
+    return countryCode.value + phoneInput.value.trim();
+  }
+  phoneInput.addEventListener('blur', () => {
+    const digits = phoneInput.value.trim();
+    const msgEl  = document.getElementById('phone-msg');
+    if (!digits) { setFieldState(phoneInput, msgEl, 'error', 'Phone number is required.'); return; }
+    if (digits.length !== 10) { setFieldState(phoneInput, msgEl, 'error', 'Enter a valid 10-digit phone number.'); return; }
+    const full = buildPhone();
+    phoneHidden.value = full;
+    checkDuplicate('phone', full, phoneInput, msgEl, '✓ Phone number available');
+  });
+  countryCode.addEventListener('change', () => {
+    if (phoneInput.value.trim().length === 10) {
+      phoneHidden.value = buildPhone();
+    }
+  });
+
+  // ── Confirm password check ──────────────────────────────
+  confirmInput.addEventListener('input', () => {
+    const msgEl = document.getElementById('confirm-msg');
+    if (!confirmInput.value) { setFieldState(confirmInput, msgEl, '', ''); return; }
+    if (confirmInput.value !== passwordInput.value) {
+      setFieldState(confirmInput, msgEl, 'error', 'Passwords do not match.');
+    } else {
+      setFieldState(confirmInput, msgEl, 'ok', '✓ Passwords match');
+    }
+  });
+
+  // ── Required field blur checks (non-AJAX) ──────────────
+  function addRequiredCheck(input, msgElId, label) {
+    input.addEventListener('blur', () => {
+      const msgEl = document.getElementById(msgElId);
+      if (!input.value.trim()) {
+        setFieldState(input, msgEl, 'error', `${label} is required.`);
+      } else if (!input.classList.contains('error')) {
+        setFieldState(input, msgEl, 'ok', '');
+      }
+    });
+  }
+  addRequiredCheck(fullnameInput, 'fullname-msg', 'Full name');
+  addRequiredCheck(addressInput,  'address-msg',  'Address');
+
+  companyInput.addEventListener('blur', () => {
+    const msgEl = document.getElementById('company-msg');
+    if (roleSelect.value !== 'Customer' && !companyInput.value.trim()) {
+      setFieldState(companyInput, msgEl, 'error', 'Company is required.');
+    } else if (!companyInput.classList.contains('error')) {
+      setFieldState(companyInput, msgEl, 'ok', '');
+    }
+  });
+
+  passwordInput.addEventListener('blur', () => {
+    const msgEl = document.getElementById('password-msg');
+    const v = passwordInput.value;
+    const pwdPat = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).+$/;
+    if (!v.trim()) {
+      setFieldState(passwordInput, msgEl, 'error', 'Password is required.');
+    } else if (!pwdPat.test(v)) {
+      setFieldState(passwordInput, msgEl, 'error', 'Must contain uppercase, lowercase, number & special char.');
+    } else {
+      setFieldState(passwordInput, msgEl, 'ok', '');
+    }
+  });
+
+  roleSelect.addEventListener('change', () => {
+    const msgEl = document.getElementById('role-msg');
+    const compReq = document.getElementById('company-req');
+    
+    if (roleSelect.value === 'Customer') {
+      if (compReq) compReq.style.display = 'none';
+      if (companyInput.classList.contains('error') && !companyInput.value.trim()) {
+        setFieldState(companyInput, document.getElementById('company-msg'), 'ok', '');
+      }
+    } else {
+      if (compReq) compReq.style.display = 'inline';
+    }
+
+    if (!roleSelect.value) {
+      setFieldState(roleSelect, msgEl, 'error', 'Please select a role.');
+    } else {
+      setFieldState(roleSelect, msgEl, 'ok', '');
+    }
+  });
+
+  // ── Form submit final validation ────────────────────────
+  form.addEventListener('submit', (e) => {
+    let valid = true;
+
+    // Set phone hidden value
+    const digits = phoneInput.value.trim();
+    if (digits.length === 10) {
+      phoneHidden.value = buildPhone();
+    }
+
+    // Check all required fields are filled
+    const checks = [
+      [fullnameInput, 'fullname-msg', 'Full name is required.'],
+      [usernameInput, 'username-msg', 'Username is required.'],
+      [emailInput,    'email-msg',    'Email is required.'],
+      [addressInput,  'address-msg',  'Address is required.'],
+      [passwordInput, 'password-msg', 'Password is required.'],
+      [confirmInput,  'confirm-msg',  'Please confirm your password.'],
+    ];
+    checks.forEach(([inp, msgId, msg]) => {
+      if (!inp.value.trim()) {
+        setFieldState(inp, document.getElementById(msgId), 'error', msg);
+        valid = false;
+      }
+    });
+
+    if (roleSelect.value !== 'Customer' && !companyInput.value.trim()) {
+      setFieldState(companyInput, document.getElementById('company-msg'), 'error', 'Company is required.');
+      valid = false;
+    }
+
+    // Phone
+    if (!digits || digits.length !== 10) {
+      setFieldState(phoneInput, document.getElementById('phone-msg'), 'error', 'Enter a valid 10-digit phone number.');
+      valid = false;
+    }
+
+    // Role
+    if (!roleSelect.value) {
+      setFieldState(roleSelect, document.getElementById('role-msg'), 'error', 'Please select a role.');
+      valid = false;
+    }
+
+    // Email format
+    const emailPat = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (emailInput.value && !emailPat.test(emailInput.value.trim())) {
+      setFieldState(emailInput, document.getElementById('email-msg'), 'error', 'Enter a valid email address.');
+      valid = false;
+    }
+
+    // Password strength
+    const pwdPat = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).+$/;
+    if (passwordInput.value && !pwdPat.test(passwordInput.value)) {
+      setFieldState(passwordInput, document.getElementById('password-msg'), 'error', 'Must contain uppercase, lowercase, number & special char.');
+      valid = false;
+    }
+
+    // Confirm password
+    if (confirmInput.value && confirmInput.value !== passwordInput.value) {
+      setFieldState(confirmInput, document.getElementById('confirm-msg'), 'error', 'Passwords do not match.');
+      valid = false;
+    }
+
+    // Block if any error classes remain
+    if (document.querySelectorAll('.error').length > 0) valid = false;
+
+    if (!valid) e.preventDefault();
+  });
+</script>
+</body>
+</html>

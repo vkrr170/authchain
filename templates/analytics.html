@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+{% block title %}Analytics{% endblock %}
+{% block page_title %}Analytics — {{ role }}{% endblock %}
+
+{% block content %}
+<!-- ROLE-SCOPED STAT CARDS -->
+<div class="row g-3 mb-4">
+
+  {% if role == 'Manufacturer' %}
+  <div class="col-md">
+    <div class="stat-card cyan">
+      <div style="font-size:.72rem;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px;">Total Manufactured</div>
+      <div class="stat-number cyan">{{ stats.total_manufactured }}</div>
+    </div>
+  </div>
+  <div class="col-md">
+    <div class="stat-card green">
+      <div style="font-size:.72rem;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px;">Currently In Stock</div>
+      <div class="stat-number green">{{ stats.currently_owned }}</div>
+    </div>
+  </div>
+  <div class="col-md">
+    <div class="stat-card yellow">
+      <div style="font-size:.72rem;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px;">Transferred Out</div>
+      <div class="stat-number yellow">{{ stats.total_transferred }}</div>
+    </div>
+  </div>
+  <div class="col-md">
+    <div class="stat-card red">
+      <div style="font-size:.72rem;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px;">Recalled Units</div>
+      <div class="stat-number red">{{ stats.recalled }}</div>
+    </div>
+  </div>
+
+  {% elif role == 'Distributor' or role == 'Retailer' %}
+  <div class="col-md">
+    <div class="stat-card cyan">
+      <div style="font-size:.72rem;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px;">Total Received</div>
+      <div class="stat-number cyan">{{ stats.received }}</div>
+    </div>
+  </div>
+  <div class="col-md">
+    <div class="stat-card green">
+      <div style="font-size:.72rem;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px;">Currently Owned</div>
+      <div class="stat-number green">{{ stats.currently_owned }}</div>
+    </div>
+  </div>
+  <div class="col-md">
+    <div class="stat-card yellow">
+      <div style="font-size:.72rem;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px;">Forwarded Out</div>
+      <div class="stat-number yellow">{{ stats.forwarded }}</div>
+    </div>
+  </div>
+  <div class="col-md">
+    <div class="stat-card" style="border-top:2px solid var(--primary);">
+      <div style="font-size:.72rem;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px;">Throughput Ratio</div>
+      <div style="font-family:'Space Mono',monospace;font-size:2.2rem;font-weight:700;color:var(--primary);">
+        {% if stats.received > 0 %}{{ ((stats.forwarded / stats.received) * 100)|int }}%{% else %}—{% endif %}
+      </div>
+    </div>
+  </div>
+
+  {% elif role == 'Customer' %}
+  <div class="col-md">
+    <div class="stat-card cyan">
+      <div style="font-size:.72rem;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px;">Products Owned</div>
+      <div class="stat-number cyan">{{ stats.owned }}</div>
+    </div>
+  </div>
+  <div class="col-md">
+    <div class="stat-card green">
+      <div style="font-size:.72rem;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px;">Total Scans Made</div>
+      <div class="stat-number green">{{ stats.total_scans }}</div>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+
+<div class="row g-4">
+  <!-- Categories chart -->
+  <div class="col-lg-6">
+    <div class="ac-card">
+      <div style="font-size:.75rem;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:20px;">Products by Category</div>
+      {% if categories %}
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        {% for cat in categories %}
+        {% set pct = (cat.count / total_products * 100)|int if total_products > 0 else 0 %}
+        <div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
+            <span style="font-size:.88rem;font-weight:600;">{{ cat._id or 'Uncategorized' }}</span>
+            <span class="mono" style="font-size:.82rem;color:var(--primary);">{{ cat.count }}</span>
+          </div>
+          <div style="background:var(--surface2);border-radius:4px;height:6px;overflow:hidden;">
+            <div style="background:var(--primary);height:100%;width:{{ pct }}%;border-radius:4px;transition:.6s ease;"></div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div style="text-align:center;padding:32px;color:var(--text-dim);">No product data yet.</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Supply chain info / system health -->
+  <div class="col-lg-6">
+    <div class="ac-card">
+      <div style="font-size:.75rem;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:20px;">System Health</div>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        {% for label, value, color, icon in [
+          ('MongoDB Connection', 'Active', 'var(--success)', 'bi-database-fill-check'),
+          ('Audit Ledger', 'Active', 'var(--success)', 'bi-journal-text'),
+          ('QR Generator', 'Ready', 'var(--success)', 'bi-qr-code'),
+          ('Anti-Counterfeit', 'Enabled', 'var(--primary)', 'bi-shield-fill-check')
+        ] %}
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--surface2);border-radius:8px;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <i class="bi {{ icon }}" style="color:{{ color }};font-size:1.1rem;"></i>
+            <span style="font-size:.88rem;font-weight:600;">{{ label }}</span>
+          </div>
+          <span style="font-size:.78rem;color:{{ color }};font-weight:700;">{{ value }}</span>
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- Role-specific note -->
+      <div style="margin-top:20px;padding:14px;background:rgba(0,229,255,0.05);border:1px solid rgba(0,229,255,0.15);border-radius:10px;">
+        <div style="font-size:.75rem;color:var(--text-dim);margin-bottom:6px;">Your Role in the Chain</div>
+        <div style="font-family:'Space Mono',monospace;font-size:1.4rem;font-weight:700;color:var(--primary);">{{ role }}</div>
+        <div style="font-size:.78rem;color:var(--text-dim);margin-top:4px;">
+          {% if role == 'Manufacturer' %}Creates and recalls products. Can ship to Distributors, Retailers, or Customers.
+          {% elif role == 'Distributor' %}Intermediate node. Receives from Manufacturers or Distributors. Ships to Distributors, Retailers, or Customers.
+          {% elif role == 'Retailer' %}End-of-chain seller. Receives and sells to Customers.
+          {% elif role == 'Customer' %}End consumer. Can verify purchased products.
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

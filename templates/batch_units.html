@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+{% block title %}Product Units{% endblock %}
+{% block page_title %}Product Units{% endblock %}
+
+{% block content %}
+{% set sample = units[0] %}
+
+<!-- BATCH SELECTOR DROPDOWN -->
+{% if all_batches|length > 1 %}
+<div class="ac-card mb-3" style="padding:14px 20px;">
+  <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+    <div style="font-size:.72rem;letter-spacing:1.5px;color:var(--text-dim);text-transform:uppercase;white-space:nowrap;">
+      <i class="bi bi-layers me-1"></i>Select Batch
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;flex:1;">
+      {% for b in all_batches %}
+      <a href="{{ url_for('batch_units', puid=b.puid, **({'owned_only': 1} if request.args.get('owned_only') == '1' else {})) }}"
+         style="padding:5px 14px;border-radius:8px;font-size:.8rem;font-weight:700;text-decoration:none;font-family:'Space Mono',monospace;
+                {% if b.batch == current_batch %}background:var(--primary);color:#000;{% else %}border:1px solid var(--border);color:var(--text-dim);{% endif %}">
+        {{ b.batch }}
+        <span style="font-size:.7rem;opacity:.75;">({{ b.unit_count }} units)</span>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<div class="row g-4 mb-4">
+  <div class="col-lg-3">
+    {% if sample.image %}
+    <img src="{{ url_for('static', filename='product_images/' + sample.image) }}"
+         style="width:100%;aspect-ratio:1;object-fit:contain;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:12px;" />
+    {% else %}
+    <div style="width:100%;aspect-ratio:1;background:var(--surface);border:1px solid var(--border);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:4rem;">📦</div>
+    {% endif %}
+  </div>
+  <div class="col-lg-9">
+    <div class="ac-card h-100">
+      <div style="font-size:.72rem;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:6px;">{{ sample.category }}</div>
+      <h2 style="font-size:1.7rem;font-weight:800;margin-bottom:4px;">{{ sample.name }}</h2>
+      <div style="color:var(--text-dim);margin-bottom:20px;">{{ sample.brand }}</div>
+
+      <!-- PUID badge -->
+      <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(0,229,255,0.08);border:1px solid rgba(0,229,255,0.2);border-radius:8px;padding:8px 14px;margin-bottom:20px;">
+        <span style="font-size:.68rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;">PUID</span>
+        <span class="mono" style="color:var(--primary);font-weight:700;font-size:.88rem;">{{ sample.puid or puid }}</span>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;">
+        {% for label, value, color in [
+          ('Batch', sample.batch, 'var(--text)'),
+          ('Mfg Date', sample.mfg_date, 'var(--text)'),
+          ('Exp Date', sample.exp_date, 'var(--text)'),
+          ('Price Per Unit', '₹' ~ sample.price_per_unit, 'var(--success)'),
+          ('Total Units', units|length|string, 'var(--primary)'),
+          ('Manufacturer', sample.manufacturer, 'var(--text)')
+        ] %}
+        <div style="background:var(--surface2);border-radius:8px;padding:12px;">
+          <div style="font-size:.68rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">{{ label }}</div>
+          <div style="font-weight:700;color:{{ color }};font-family:'Space Mono',monospace;font-size:.84rem;">{{ value }}</div>
+        </div>
+        {% endfor %}
+      </div>
+
+      {% if sample.description %}
+      <div style="margin-top:16px;color:var(--text-dim);font-size:.88rem;line-height:1.6;">{{ sample.description }}</div>
+      {% endif %}
+
+      <div style="margin-top:20px;display:flex;gap:10px;flex-wrap:wrap;">
+        <a href="{{ url_for('dashboard') }}" class="btn-outline-ac">← Dashboard</a>
+        {% if session.role == 'Manufacturer' and sample.manufacturer == session.username %}
+
+        {% set batch_puid = sample.puid or puid %}
+        {% set already_recalled = units | selectattr('status', 'equalto', 'recalled') | list | length == units | length %}
+        {% if not already_recalled %}
+        <a href="{{ url_for('recall_batch', puid=batch_puid) }}"
+           style="background:var(--accent);color:#fff;padding:8px 20px;border-radius:8px;text-decoration:none;font-weight:700;font-family:'Syne',sans-serif;font-size:.9rem;">
+          <i class="bi bi-exclamation-triangle-fill" style="margin-right:6px;"></i>Recall Batch
+        </a>
+        {% else %}
+        <span style="background:rgba(255,61,113,0.12);color:var(--accent);padding:8px 20px;border-radius:8px;font-weight:700;font-size:.9rem;border:1px solid var(--accent);">
+          <i class="bi bi-x-circle-fill me-1"></i>Recalled
+        </span>
+        {% endif %}
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- INDIVIDUAL UNITS -->
+<div class="ac-card">
+  <div style="font-size:.72rem;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:20px;">
+    Individual Units (SUIDs)
+    <span style="color:var(--primary);margin-left:8px;">{{ units|length }}</span>
+  </div>
+  <div style="overflow-x:auto;">
+    <table class="ac-table" style="min-width:620px;">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>SUID</th>
+          <th>Current Owner</th>
+          <th>Owner Role</th>
+          {% if session.role != 'Customer' %}
+          <th>Scans</th>
+          {% endif %}
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in units %}
+        <tr>
+          <td style="color:var(--text-dim);font-size:.8rem;">{{ loop.index }}</td>
+          <td>
+            <span class="mono" style="color:var(--primary);font-size:.82rem;">{{ u.suid or u.uid }}</span>
+          </td>
+          <td><span class="mono" style="font-size:.82rem;">{{ u.owner }}</span></td>
+          <td>
+            <span class="role-badge">
+              <span data-owner="{{ u.owner }}">—</span>
+            </span>
+          </td>
+          {% if session.role != 'Customer' %}
+          <td>
+            <span class="mono" style="font-weight:700;color:{% if u.scans > 1 %}var(--accent){% else %}var(--success){% endif %};">
+              {{ u.scans }}
+            </span>
+          </td>
+          {% endif %}
+          <td>
+            <a href="{{ url_for('product_details', suid=u.suid or u.uid) }}"
+               style="padding:4px 12px;border:1px solid var(--primary);color:var(--primary);border-radius:6px;font-size:.78rem;font-weight:700;text-decoration:none;">
+              View
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const ownerRoles = {{ owner_roles | tojson }};
+document.querySelectorAll('[data-owner]').forEach(el => {
+  const owner = el.dataset.owner;
+  const role  = ownerRoles[owner] || '—';
+  el.textContent = role;
+  el.closest('.role-badge').className = 'role-badge ' + role;
+});
+</script>
+{% endblock %}

@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+{% block title %}Audit Log{% endblock %}
+{% block page_title %}Audit Log{% endblock %}
+
+{% block content %}
+<div class="ac-card mb-4" style="display:flex;gap:24px;flex-wrap:wrap;align-items:center;">
+  <div>
+    <div style="font-size:.72rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:2px;margin-bottom:4px;">Total Records</div>
+    <div style="font-family:'Space Mono',monospace;font-size:2rem;font-weight:700;color:var(--primary);">{{ total }}</div>
+  </div>
+  <div style="width:1px;background:var(--border);align-self:stretch;"></div>
+  <div style="color:var(--text-dim);font-size:.85rem;max-width:440px;">
+    Every product creation, manufacture, and transfer is recorded here as a linked blockchain audit trail.
+  </div>
+</div>
+
+{% if txns %}
+<div style="display:flex;flex-direction:column;gap:12px;">
+  {% for txn in txns %}
+  <div class="ac-card" style="border-left:3px solid
+    {% if txn.action == 'CREATED' or txn.action == 'MANUFACTURED' %}var(--accent)
+    {% elif txn.action == 'TRANSFERRED' %}var(--primary)
+    {% else %}var(--border){% endif %};">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="border-radius:8px;padding:6px 12px;font-size:.78rem;font-weight:700;
+          {% if txn.action == 'CREATED' or txn.action == 'MANUFACTURED' %}
+            background:rgba(255,61,113,0.1);color:var(--accent);
+          {% elif txn.action == 'TRANSFERRED' %}
+            background:rgba(0,229,255,0.1);color:var(--primary);
+          {% else %}
+            background:rgba(255,255,255,0.05);color:var(--text-dim);
+          {% endif %}">
+          {{ txn.action }}
+        </div>
+        <div>
+          <div style="font-family:'Space Mono',monospace;font-size:.82rem;font-weight:600;">
+            {{ txn.get('suid') or txn.get('uid') or '—' }}
+          </div>
+          <div style="font-size:.75rem;color:var(--text-dim);">
+            {{ txn.timestamp | ts }}
+          </div>
+        </div>
+      </div>
+      {% if txn.puid %}
+      <div class="mono" style="font-size:.75rem;color:var(--text-dim);background:rgba(255,255,255,0.04);padding:5px 10px;border-radius:6px;align-self:center;">
+        PUID: {{ txn.puid }}
+      </div>
+      {% endif %}
+    </div>
+
+    <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div>
+        <div style="font-size:.68rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;">From</div>
+        <div class="mono" style="font-size:.82rem;">{{ txn.get('from_user', '—') }}</div>
+      </div>
+      <div>
+        <div style="font-size:.68rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;">To</div>
+        <div class="mono" style="font-size:.82rem;color:var(--primary);">{{ txn.get('to_user', '—') }}</div>
+      </div>
+    </div>
+    {% if txn.block_id or txn.block_hash %}
+    <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border);display:flex;gap:10px;flex-wrap:wrap;">
+      {% if txn.block_id %}
+      <div class="mono" style="font-size:.72rem;color:var(--primary);">Block: {{ txn.block_id }}</div>
+      {% endif %}
+      {% if txn.block_hash %}
+      <div class="mono" style="font-size:.72rem;color:var(--text-dim);word-break:break-all;">Hash: {{ txn.block_hash }}</div>
+      {% endif %}
+      {% if txn.ethereum_tx %}
+      <div class="mono" style="font-size:.72rem;color:var(--success);word-break:break-all;display:flex;gap:6px;align-items:center;">
+        Tx: {{ txn.ethereum_tx }}
+        <a href="https://sepolia.etherscan.io/tx/{{ txn.ethereum_tx }}" target="_blank" rel="noopener noreferrer" style="color:var(--primary);text-decoration:none;display:inline-flex;align-items:center;gap:4px;padding:2px 6px;border:1px solid rgba(0,229,255,0.3);border-radius:4px;background:rgba(0,229,255,0.05);transition:all 0.2s;">
+          <i class="bi bi-box-arrow-up-right"></i> View
+        </a>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+
+{% if total_pages > 1 %}
+<div style="display:flex;justify-content:center;gap:8px;margin-top:24px;flex-wrap:wrap;">
+  {% if page > 1 %}
+  <a href="?page={{ page - 1 }}" style="padding:6px 14px;border:1px solid var(--border);border-radius:6px;color:var(--text-dim);text-decoration:none;font-size:.84rem;">← Prev</a>
+  {% endif %}
+  <span style="padding:6px 14px;font-size:.85rem;color:var(--text-dim);">Page {{ page }} of {{ total_pages }}</span>
+  {% if page < total_pages %}
+  <a href="?page={{ page + 1 }}" style="padding:6px 14px;border:1px solid var(--border);border-radius:6px;color:var(--text-dim);text-decoration:none;font-size:.84rem;">Next →</a>
+  {% endif %}
+</div>
+{% endif %}
+
+{% else %}
+<div class="ac-card" style="text-align:center;padding:64px;">
+  <i class="bi bi-journal-text" style="font-size:3rem;color:var(--text-dim);display:block;margin-bottom:12px;"></i>
+  <div style="color:var(--text-dim);">No transactions recorded yet. Add and transfer products to populate the audit log.</div>
+</div>
+{% endif %}
+{% endblock %}
