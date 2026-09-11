@@ -1,8 +1,9 @@
 import os
 import bcrypt
-import csv
 from pymongo import MongoClient
 from dotenv import load_dotenv
+import secrets
+import string
 
 load_dotenv()
 
@@ -15,13 +16,14 @@ users_col = db["users"]
 roles = ["Manufacturer", "Distributor", "Retailer", "Customer"]
 users_data = []
 
-csv_data = [["url", "username", "password", "name"]]
-password = "password123"
-
 # Common base URL for the local app
 base_url = "http://localhost:5000/login"
 
 print("Seeding users into MongoDB...")
+
+def generate_secure_password(length=16):
+    alphabet = string.ascii_letters + string.digits + "!@#$%^&*"
+    return ''.join(secrets.choice(alphabet) for i in range(length))
 
 for role in roles:
     prefix = role.lower()[:4] # mfg, dist, reta, cust
@@ -34,7 +36,8 @@ for role in roles:
         # Check if user exists
         existing = users_col.find_one({"username": username})
         if not existing:
-            hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
+            secure_pwd = generate_secure_password()
+            hashed = bcrypt.hashpw(secure_pwd.encode(), bcrypt.gensalt())
             users_col.insert_one({
                 "fullname": fullname,
                 "email": f"{username}@example.com",
@@ -46,15 +49,6 @@ for role in roles:
                 "role": role,
                 "wallet": ""
             })
-            print(f"Created user: {username}")
+            print(f"Created user: {username} | Password: {secure_pwd}")
         else:
             print(f"User {username} already exists, skipping insertion.")
-            
-        csv_data.append([base_url, username, password, f"AuthChain - {fullname}"])
-
-csv_file_path = os.path.abspath("brave_passwords.csv")
-with open(csv_file_path, mode="w", newline="", encoding="utf-8") as f:
-    writer = csv.writer(f)
-    writer.writerows(csv_data)
-
-print(f"\nCSV file successfully generated at: {csv_file_path}")

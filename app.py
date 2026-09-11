@@ -25,8 +25,11 @@ except ImportError:
     Web3 = None
     encode_defunct = None
 
+from flask_wtf.csrf import CSRFProtect
+
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY") or os.urandom(24).hex()
+csrf = CSRFProtect(app)
 
 oauth = OAuth(app)
 google = oauth.register(
@@ -63,7 +66,7 @@ try:
     products_col.create_index("suid", unique=True)
     products_col.create_index("puid")
     products_col.create_index("owner")
-    blocks_col.create_index([("suid", 1), ("index", 1)])
+    blocks_col.create_index([("suid", 1), ("index", 1)], unique=True)
     transactions_col.create_index("suid")
 except Exception as e:
     app.logger.warning(f"Could not create database indexes: {e}")
@@ -206,6 +209,18 @@ def sign_block_hash(block_hash):
         _local_w3 = Web3()
     signed = _local_w3.eth.account.sign_message(msg, private_key=ETH_PRIVATE_KEY)
     return "0x" + signed.signature.hex()
+
+def verify_server_signature(block_hash, signature):
+    if not ETH_PRIVATE_KEY or not encode_defunct:
+        return True # Fallback if web3 is disabled
+    try:
+        msg = encode_defunct(hexstr=block_hash)
+        w3 = Web3()
+        server_address = w3.eth.account.from_key(ETH_PRIVATE_KEY).address
+        recovered_address = w3.eth.account.recover_message(msg, signature=signature)
+        return recovered_address.lower() == server_address.lower()
+    except Exception:
+        return False
 
 def record_block_on_ethereum(block):
     # Backend no longer records blocks directly.
@@ -970,12 +985,18 @@ def api_product_confirm():
     if not blocks or not tx_hash:
         return jsonify({"ok": False, "error": "Invalid confirmation data."}), 400
 
+    valid_block_ids = []
     if Web3 and WEB3_PROVIDER_URI:
         try:
             w3      = Web3(Web3.HTTPProvider(WEB3_PROVIDER_URI))
             receipt = w3.eth.get_transaction_receipt(tx_hash)
             if not receipt or receipt.status != 1:
                 return jsonify({"ok": False, "error": "Blockchain transaction failed or not found."}), 400
+                
+            _, contract = ethereum_contract()
+            if contract:
+                processed_events = contract.events.ProductEventRecorded().process_receipt(receipt)
+                valid_block_ids = [e['args']['blockId'] for e in processed_events]
         except Exception as e:
             return jsonify({"ok": False, "error": f"Error verifying tx: {str(e)}"}), 400
 
@@ -987,6 +1008,15 @@ def api_product_confirm():
     transactions_to_insert = []
 
     for block in blocks:
+        # Server-side validation
+        expected_hash = calculate_block_hash(block)
+        if block.get("block_hash") != expected_hash:
+            return jsonify({"ok": False, "error": f"Block hash mismatch for {block.get('suid')}"}), 400
+        if not verify_server_signature(expected_hash, block.get("signature")):
+            return jsonify({"ok": False, "error": f"Invalid server signature for {block.get('suid')}"}), 400
+        if valid_block_ids and block["block_id"] not in valid_block_ids:
+            return jsonify({"ok": False, "error": f"Block ID {block['block_id']} not found in transaction logs"}), 400
+
         block["uid"]         = block["suid"]
         block["ethereum_tx"] = tx_hash
         # Extract metadata before saving the block
@@ -1165,16 +1195,8 @@ def api_product_edit_blueprint(bp_id):
     # Update blueprint
     blueprints_col.update_one({"_id": bp_id}, {"$set": update_fields})
 
-    # Retroactively update all existing products that were manufactured from this blueprint
-    products_col.update_many(
-        {
-            "name": old_name, 
-            "brand": old_brand, 
-            "category": old_category, 
-            "manufacturer": username
-        },
-        {"$set": update_fields}
-    )
+    # Historical products manufactured from this blueprint are intentionally NOT updated.
+    # Editing a blueprint should only affect future manufactured units to preserve provenance.
 
     return jsonify({"ok": True})
 
@@ -1312,6 +1334,27 @@ def api_recall_confirm():
     if not blocks or not tx_hash:
         return jsonify({"ok": False, "error": "Invalid confirmation data."}), 400
 
+    valid_block_ids = []
+    if Web3 and WEB3_PROVIDER_URI:
+        try:
+            w3      = Web3(Web3.HTTPProvider(WEB3_PROVIDER_URI))
+            receipt = None
+            for _ in range(10):  # retry up to 10 times (30 seconds total)
+                receipt = w3.eth.get_transaction_receipt(tx_hash)
+                if receipt is not None:
+                    break
+                import time as _time
+                _time.sleep(3)
+            if not receipt or receipt.status != 1:
+                return jsonify({"ok": False, "error": "Blockchain transaction failed or not yet confirmed. Please try again in a moment."}), 400
+                
+            _, contract = ethereum_contract()
+            if contract:
+                processed_events = contract.events.ProductEventRecorded().process_receipt(receipt)
+                valid_block_ids = [e['args']['blockId'] for e in processed_events]
+        except Exception as e:
+            return jsonify({"ok": False, "error": f"Error verifying transaction: {str(e)}"}), 400
+
     recalled_count = 0
     puid = blocks[0]["puid"] if blocks else ""
     
@@ -1320,6 +1363,14 @@ def api_recall_confirm():
     product_updates = []
 
     for block in blocks:
+        # Server-side validation
+        expected_hash = calculate_block_hash(block)
+        if block.get("block_hash") != expected_hash:
+            return jsonify({"ok": False, "error": f"Block hash mismatch for {block.get('suid')}"}), 400
+        if not verify_server_signature(expected_hash, block.get("signature")):
+            return jsonify({"ok": False, "error": f"Invalid server signature for {block.get('suid')}"}), 400
+        if valid_block_ids and block["block_id"] not in valid_block_ids:
+            return jsonify({"ok": False, "error": f"Block ID {block['block_id']} not found in transaction logs"}), 400
         block["uid"]         = block["suid"]
         block["ethereum_tx"] = tx_hash
         
@@ -1506,6 +1557,7 @@ def api_transfer_confirm():
     if not blocks or not tx_hash:
         return jsonify({"ok": False, "error": "Invalid confirmation data."}), 400
 
+    valid_block_ids = []
     if Web3 and WEB3_PROVIDER_URI:
         try:
             w3      = Web3(Web3.HTTPProvider(WEB3_PROVIDER_URI))
@@ -1518,6 +1570,11 @@ def api_transfer_confirm():
                 _time.sleep(3)
             if not receipt or receipt.status != 1:
                 return jsonify({"ok": False, "error": "Blockchain transaction failed or not yet confirmed. Please try again in a moment."}), 400
+                
+            _, contract = ethereum_contract()
+            if contract:
+                processed_events = contract.events.ProductEventRecorded().process_receipt(receipt)
+                valid_block_ids = [e['args']['blockId'] for e in processed_events]
         except Exception as e:
             return jsonify({"ok": False, "error": f"Error verifying transaction: {str(e)}"}), 400
 
@@ -1530,6 +1587,15 @@ def api_transfer_confirm():
     product_updates = []
 
     for block in blocks:
+        # Server-side validation
+        expected_hash = calculate_block_hash(block)
+        if block.get("block_hash") != expected_hash:
+            return jsonify({"ok": False, "error": f"Block hash mismatch for {block.get('suid')}"}), 400
+        if not verify_server_signature(expected_hash, block.get("signature")):
+            return jsonify({"ok": False, "error": f"Invalid server signature for {block.get('suid')}"}), 400
+        if valid_block_ids and block["block_id"] not in valid_block_ids:
+            return jsonify({"ok": False, "error": f"Block ID {block['block_id']} not found in transaction logs"}), 400
+
         block["uid"]         = block["suid"]
         block["ethereum_tx"] = tx_hash
 

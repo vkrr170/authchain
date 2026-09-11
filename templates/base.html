@@ -2,6 +2,7 @@
 <html lang="en">
 
 <head>
+  <meta name="csrf-token" content="{{ csrf_token() }}">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AuthChain – {% block title %}{% endblock %}</title>
@@ -672,6 +673,22 @@
   </script>
   {% endif %}
   {% block scripts %}{% endblock %}
+  <!-- Global CSRF interceptor for fetch -->
+  <script>
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    if (csrfToken) {
+      const originalFetch = window.fetch;
+      window.fetch = async function() {
+        let [resource, config] = arguments;
+        if (config && (config.method === 'POST' || config.method === 'PUT' || config.method === 'DELETE')) {
+          config.headers = config.headers || {};
+          // Only add if not FormData (browser handles boundaries for FormData, but we can set the CSRF header safely)
+          config.headers['X-CSRFToken'] = csrfToken;
+        }
+        return originalFetch(resource, config);
+      };
+    }
+  </script>
 </body>
 
 </html>

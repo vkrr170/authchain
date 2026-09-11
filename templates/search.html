@@ -8,6 +8,7 @@
     <div class="ac-card mb-4">
       <div style="font-size:.75rem;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:16px;">Search by PUID or SUID</div>
       <form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
         <div style="display:flex;gap:12px;">
           <input type="text" name="uid" class="form-control mono"
                  placeholder="Enter PUID (P-XXXXXXXX) or SUID (S-XXXXXXXX)..."

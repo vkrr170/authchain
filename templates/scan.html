@@ -30,6 +30,7 @@
     <div class="ac-card">
       <div style="font-size:.75rem;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:16px;">Manual Entry</div>
       <form method="POST" action="{{ url_for('verify') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
         <div class="mb-3">
           <label class="form-label">PUID <span style="color:var(--text-dim);font-weight:400;">(Product ID)</span></label>
           <input type="text" name="puid_input" class="form-control mono"

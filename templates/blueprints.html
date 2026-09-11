@@ -11,6 +11,7 @@
     </div>
     <div style="display:flex;gap:10px;align-items:center;">
       <form method="GET" action="{{ url_for('blueprints') }}" style="display:flex; gap:8px; margin: 0;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
         <input type="hidden" name="category" value="{{ request.args.get('category', '') }}">
         <input type="text" name="search" class="form-control" placeholder="Search by name or brand..." value="{{ request.args.get('search', '') }}" style="background:var(--surface2); color:var(--text); border:1px solid var(--border); border-radius:8px; font-size:.84rem; padding:6px 12px; width:220px;">
         <button type="submit" class="btn-primary-ac" style="padding:6px 12px; border-radius:8px; font-size:.84rem;"><i class="bi bi-search"></i></button>
@@ -102,6 +103,7 @@
       </div>
       <div class="modal-body">
         <form id="blueprintForm" enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
           <div class="row g-3">
             <div class="col-md-6">
               <label class="form-label" style="font-size:0.8rem;color:var(--text-dim);">Product Name *</label>
@@ -164,6 +166,7 @@
       </div>
       <div class="modal-body">
         <form id="editBlueprintForm" enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
           <input type="hidden" id="edit_bp_id" name="bp_id" />
           <div class="row g-3">
             <div class="col-md-6">

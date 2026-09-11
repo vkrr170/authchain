@@ -80,6 +80,7 @@
         {% endfor %}
       {% endwith %}
       <form method="POST" action="/edit_profile" id="edit-profile-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
           <div>
             <label style="display:block;font-size:.72rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Full Name</label>

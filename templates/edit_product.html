@@ -54,6 +54,7 @@
       </div>
 
       <form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
         <div class="mb-4">
           <label class="form-label">Price Per Unit (₹) *</label>
           <div style="position:relative;max-width:260px;">

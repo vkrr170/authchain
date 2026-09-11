@@ -8,6 +8,7 @@
     <div class="ac-card">
       <div style="font-size:.75rem;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:24px;">Product Registration</div>
       <form method="POST" enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
         <div class="row g-3">
           <div class="col-md-6">
             <label class="form-label">Product Name *</label>

@@ -51,6 +51,7 @@
     {% endfor %}
   {% endwith %}
   <form method="POST" id="reg-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
     <div class="grid2">
       <div class="form-group">
         <label>Full Name<span class="req">*</span></label>
