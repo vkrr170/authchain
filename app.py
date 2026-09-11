@@ -698,6 +698,9 @@ def inject_blockchain_config():
         "eth_network_name":             ETH_NETWORK_NAME,
         "metamask_chain_id":            METAMASK_CHAIN_ID_HEX,
         "authchain_contract_address":   AUTHCHAIN_CONTRACT_ADDRESS,
+        "eth_rpc_url":                  WEB3_PROVIDER_URI or "https://rpc.sepolia.org",
+        "eth_block_explorer":           "https://sepolia.etherscan.io",
+        "eth_chain_id_dec":             ETH_CHAIN_ID,
     }
 
 # ── Dashboard ─────────────────────────────────────────────

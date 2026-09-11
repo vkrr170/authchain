@@ -266,31 +266,26 @@ if (btn) btn.addEventListener('click', async function() {
     if (qty > 0) items.push({ puid: inp.name.replace('qty_', ''), qty });
   });
   if (!items.length) return alert('Select at least one unit to transfer.');
-  if (!window.ethereum) return alert('Please connect MetaMask first.');
-  
-  let accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+
+  const ethProvider = await window.AuthChainWallet.getProviderOrPrompt('transfer products');
+  if (!ethProvider) return;
+
+  let accounts = await window.AuthChainWallet.requestAccounts(ethProvider);
+  if (!accounts || accounts.length === 0) return;
   let activeWallet = accounts[0].toLowerCase();
   const sessionWallet = (window.currentSessionWallet || '').toLowerCase();
-  
+
   if (!sessionWallet) {
-    return alert('Please click "Connect MetaMask" in the top right corner first.');
-  }
-  
-  if (activeWallet !== sessionWallet) {
-    try {
-      await window.ethereum.request({
-        method: 'wallet_requestPermissions',
-        params: [{ eth_accounts: {} }]
-      });
-      accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-      activeWallet = accounts[0].toLowerCase();
-    } catch (err) {
-      console.error(err);
-    }
+    const ok = await window.AuthChainWallet.verifyWallet(accounts[0]);
+    if (!ok) return;
+  } else if (activeWallet !== sessionWallet) {
+    accounts = await window.AuthChainWallet.requestAccounts(ethProvider, true);
+    if (accounts && accounts.length) activeWallet = accounts[0].toLowerCase();
     if (activeWallet !== sessionWallet) {
-      return alert(`MetaMask is using a different wallet (${activeWallet.slice(0,6)}...${activeWallet.slice(-4)}) than your connected profile wallet (${sessionWallet.slice(0,6)}...${sessionWallet.slice(-4)}). Please switch accounts in your MetaMask extension to match.`);
+      return alert(`MetaMask is using a different wallet (${activeWallet.slice(0,6)}...${activeWallet.slice(-4)}) than your connected profile wallet (${sessionWallet.slice(0,6)}...${sessionWallet.slice(-4)}). Please switch accounts in MetaMask to match.`);
     }
   }
+
   btn.disabled = true; btn.style.opacity = '0.6';
   const origHTML = btn.innerHTML;
   btn.innerHTML = '<i class="spinner-border spinner-border-sm me-2"></i> Preparing…';
@@ -301,7 +296,7 @@ if (btn) btn.addEventListener('click', async function() {
     }).then(r => r.json());
     if (!prepRes.ok) throw new Error(prepRes.error);
     const blocks = prepRes.blocks;
-    const provider = new ethers.BrowserProvider(window.ethereum);
+    const provider = new ethers.BrowserProvider(ethProvider);
     const signer   = await provider.getSigner();
     const CONTRACT_ADDRESS = '{{ authchain_contract_address }}';
     const abi = [

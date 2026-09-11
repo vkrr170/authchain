@@ -342,32 +342,22 @@ document.getElementById('blueprintForm').addEventListener('submit', async functi
 });
 
 async function manufactureBlueprint(bpId) {
-  if (!window.ethereum) {
-    alert('MetaMask is not installed. Please install MetaMask to manufacture products.');
-    return;
-  }
+  const ethProvider = await window.AuthChainWallet.getProviderOrPrompt('manufacture products');
+  if (!ethProvider) return;
 
-  let accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+  let accounts = await window.AuthChainWallet.requestAccounts(ethProvider);
+  if (!accounts || accounts.length === 0) return;
   let activeWallet = accounts[0].toLowerCase();
   const sessionWallet = (window.currentSessionWallet || '').toLowerCase();
   
   if (!sessionWallet) {
-    return alert('Please click "Connect MetaMask" in the top right corner first.');
-  }
-  
-  if (activeWallet !== sessionWallet) {
-    try {
-      await window.ethereum.request({
-        method: 'wallet_requestPermissions',
-        params: [{ eth_accounts: {} }]
-      });
-      accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-      activeWallet = accounts[0].toLowerCase();
-    } catch (err) {
-      console.error(err);
-    }
+    const ok = await window.AuthChainWallet.verifyWallet(accounts[0]);
+    if (!ok) return;
+  } else if (activeWallet !== sessionWallet) {
+    accounts = await window.AuthChainWallet.requestAccounts(ethProvider, true);
+    if (accounts && accounts.length) activeWallet = accounts[0].toLowerCase();
     if (activeWallet !== sessionWallet) {
-      return alert(`MetaMask is using a different wallet (${activeWallet.slice(0,6)}...${activeWallet.slice(-4)}) than your connected profile wallet (${sessionWallet.slice(0,6)}...${sessionWallet.slice(-4)}). Please switch accounts in your MetaMask extension to match.`);
+      return alert(`MetaMask is using a different wallet (${activeWallet.slice(0,6)}...${activeWallet.slice(-4)}) than your connected profile wallet (${sessionWallet.slice(0,6)}...${sessionWallet.slice(-4)}). Please switch accounts in MetaMask to match.`);
     }
   }
 
@@ -395,7 +385,7 @@ async function manufactureBlueprint(bpId) {
     statusDiv.textContent = 'Sign in MetaMask...';
     statusDiv.style.color = 'var(--warning)';
 
-    const provider = new ethers.BrowserProvider(window.ethereum);
+    const provider = new ethers.BrowserProvider(ethProvider);
     const signer   = await provider.getSigner();
 
     const mintABI = [

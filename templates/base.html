@@ -571,17 +571,224 @@
   {% endif %}
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Mobile MetaMask Connect Modal -->
+  <div class="modal fade" id="mobileMetaMaskModal" tabindex="-1" aria-labelledby="mobileMetaMaskModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content ac-card" style="border: 1px solid var(--border); background: var(--surface); color: var(--text); border-radius: 16px;">
+        <div class="modal-header" style="border-bottom: 1px solid var(--border); padding: 18px 22px;">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div style="width:38px;height:38px;border-radius:10px;background:rgba(255,107,0,0.12);border:1px solid rgba(255,107,0,0.35);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <svg width="22" height="22" viewBox="0 0 318.6 318.6">
+                <path fill="#E2761B" stroke="#E2761B" stroke-linecap="round" stroke-linejoin="round" d="M274.1 35.5l-99.5 73.9L194 65.4z"/>
+                <path fill="#E4761B" stroke="#E4761B" stroke-linecap="round" stroke-linejoin="round" d="M44.4 35.5l98.7 74.6-18.4-44.7z"/>
+                <path fill="#E4761B" stroke="#E4761B" stroke-linecap="round" stroke-linejoin="round" d="M238.3 206.8l-29.6 45.6 63.5 17.5 18-62.3z"/>
+                <path fill="#E4761B" stroke="#E4761B" stroke-linecap="round" stroke-linejoin="round" d="M28.2 207.6l18 62.3 63.5-17.5-29.6-45.6z"/>
+                <path fill="#E4761B" stroke="#E4761B" stroke-linecap="round" stroke-linejoin="round" d="M101.9 140.2l-18.9 28.6 67.2 2.9-2.3-72.3z"/>
+                <path fill="#E4761B" stroke="#E4761B" stroke-linecap="round" stroke-linejoin="round" d="M216.7 140.2l-46.4-40.8-2 72.3 67.3-2.9z"/>
+                <path fill="#E4761B" stroke="#E4761B" stroke-linecap="round" stroke-linejoin="round" d="M109.8 252.4l33.8-16.5-29.3-22.8z"/>
+                <path fill="#E4761B" stroke="#E4761B" stroke-linecap="round" stroke-linejoin="round" d="M175 235.9l33.8 16.5-4.5-39.3z"/>
+                <path fill="#F6851B" stroke="#F6851B" stroke-linecap="round" stroke-linejoin="round" d="M208.8 252.4l-33.8-16.5 3.2 24.3 1.3 5.4 35.6-1.5z"/>
+                <path fill="#F6851B" stroke="#F6851B" stroke-linecap="round" stroke-linejoin="round" d="M103.5 264.1l35.6 1.5 1.3-5.4 3.2-24.3-33.8 16.5z"/>
+                <path fill="#C0AD9E" stroke="#C0AD9E" stroke-linecap="round" stroke-linejoin="round" d="M178.4 260.2l-1.3-5.4h-35.6l-1.3 5.4-25.1 36.3 3.3.3h81.2l3.3-.3z"/>
+                <path fill="#161616" stroke="#161616" stroke-linecap="round" stroke-linejoin="round" d="M159.3 226.7l-4.7 14.8 5.7 3.9 5.7-3.9z"/>
+                <path fill="#763D16" stroke="#763D16" stroke-linecap="round" stroke-linejoin="round" d="M280.2 143.5l19.8-29-9.5-8.4-27.1 20.3z"/>
+                <path fill="#763D16" stroke="#763D16" stroke-linecap="round" stroke-linejoin="round" d="M18.6 106.1l-9.5 8.4 19.8 29 16.8-17.1z"/>
+                <path fill="#F6851B" stroke="#F6851B" stroke-linecap="round" stroke-linejoin="round" d="M280.2 143.5l-16.8 17.1 26.8 47 18-62.3z"/>
+                <path fill="#F6851B" stroke="#F6851B" stroke-linecap="round" stroke-linejoin="round" d="M45.4 160.6l-16.8-17.1-10 1.8 18 62.3z"/>
+                <path fill="#F6851B" stroke="#F6851B" stroke-linecap="round" stroke-linejoin="round" d="M170.3 99.4l46.4 40.8 46.7-41.1-23.7-33.7z"/>
+                <path fill="#F6851B" stroke="#F6851B" stroke-linecap="round" stroke-linejoin="round" d="M75.2 65.4l-23.7 33.7 46.7 41.1 46.4-40.8z"/>
+              </svg>
+            </div>
+            <div>
+              <h5 class="modal-title" id="mobileMetaMaskModalLabel" style="font-size: 1.05rem; font-weight: 700; margin: 0; font-family: 'Syne', sans-serif;">Connect MetaMask Mobile</h5>
+              <div style="font-size: 0.72rem; color: var(--text-dim);">Seamless Web3 Integration</div>
+            </div>
+          </div>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" style="padding: 22px;">
+          <p id="mobileModalActionText" style="font-size: 0.88rem; color: var(--text-dim); line-height: 1.5; margin-bottom: 20px;">
+            Standard mobile browsers (Chrome / Safari) do not support desktop wallet extensions. To interact with the blockchain, please open AuthChain inside the <strong>MetaMask App</strong>.
+          </p>
+
+          <div style="display:flex;flex-direction:column;gap:12px;">
+            <a id="btnOpenMetaMaskApp" href="#" target="_blank" rel="noopener noreferrer" class="btn-primary-ac" style="display:flex;align-items:center;justify-content:center;gap:10px;text-decoration:none;padding:12px;font-size:.92rem;font-weight:700;">
+              <i class="bi bi-box-arrow-up-right"></i> Open in MetaMask App
+            </a>
+            
+            <button id="btnCopyMetaMaskLink" type="button" class="btn-outline-ac" style="display:flex;align-items:center;justify-content:center;gap:10px;padding:11px;font-size:.86rem;">
+              <i class="bi bi-clipboard"></i> Copy Link for MetaMask Browser
+            </button>
+          </div>
+
+          <div id="copySuccessAlert" style="display:none;margin-top:14px;padding:10px 12px;border-radius:8px;background:rgba(0,230,118,0.12);border:1px solid var(--success);color:var(--success);font-size:.8rem;text-align:center;">
+            ✓ Link copied! Open the MetaMask app, tap the Browser tab, and paste the link.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   {% if session.username %}
   <script>
     const REQUIRED_CHAIN_ID = '{{ metamask_chain_id }}';
     const REQUIRED_NETWORK_NAME = '{{ eth_network_name }}';
+    const ETH_RPC_URL = '{{ eth_rpc_url }}';
+    const ETH_BLOCK_EXPLORER = '{{ eth_block_explorer }}';
     const walletButton = document.getElementById('walletButton');
     const walletLabel = document.getElementById('walletLabel');
 
     window.currentSessionWallet = '{{ session.wallet | default("") }}';
 
     function shortWallet(address) {
+      if (!address) return '';
       return address.slice(0, 6) + '...' + address.slice(-4);
+    }
+
+    function isMobileDevice() {
+      return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+             (window.innerWidth <= 800 && 'ontouchstart' in window);
+    }
+
+    function getMetaMaskDeepLink(targetPath) {
+      let host = window.location.host;
+      let path = targetPath || (window.location.pathname + window.location.search);
+      // For localhost on mobile, recommend LAN IP if available
+      let cleanUrl = (host + path).replace(/^https?:\/\//i, '');
+      return 'https://metamask.app.link/dapp/' + cleanUrl;
+    }
+
+    function showMobileMetaMaskModal(actionDescription = 'connect your wallet') {
+      const modalEl = document.getElementById('mobileMetaMaskModal');
+      const actionTextEl = document.getElementById('mobileModalActionText');
+      const btnOpenApp = document.getElementById('btnOpenMetaMaskApp');
+      const btnCopyLink = document.getElementById('btnCopyMetaMaskLink');
+      const copyAlert = document.getElementById('copySuccessAlert');
+
+      const deepLink = getMetaMaskDeepLink();
+      const currentFullUrl = window.location.href;
+
+      if (btnOpenApp) {
+        btnOpenApp.href = deepLink;
+      }
+
+      if (actionTextEl) {
+        actionTextEl.innerHTML = `To <strong>${actionDescription}</strong> on a mobile device, please open AuthChain inside the <strong>MetaMask App</strong> browser.`;
+      }
+
+      if (btnCopyLink) {
+        btnCopyLink.onclick = async () => {
+          try {
+            await navigator.clipboard.writeText(currentFullUrl);
+            if (copyAlert) {
+              copyAlert.style.display = 'block';
+              setTimeout(() => { copyAlert.style.display = 'none'; }, 4000);
+            }
+          } catch (e) {
+            prompt('Copy this link and open it in the MetaMask app browser:', currentFullUrl);
+          }
+        };
+      }
+
+      if (modalEl && window.bootstrap) {
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+      } else {
+        window.location.href = deepLink;
+      }
+    }
+
+    async function getEthereumProvider(timeoutMs = 2500) {
+      if (window.ethereum) return window.ethereum;
+
+      return new Promise((resolve) => {
+        const onInitialized = () => {
+          window.removeEventListener('ethereum#initialized', onInitialized);
+          resolve(window.ethereum || null);
+        };
+        window.addEventListener('ethereum#initialized', onInitialized, { once: true });
+
+        const startTime = Date.now();
+        const timer = setInterval(() => {
+          if (window.ethereum) {
+            clearInterval(timer);
+            window.removeEventListener('ethereum#initialized', onInitialized);
+            resolve(window.ethereum);
+          } else if (Date.now() - startTime > timeoutMs) {
+            clearInterval(timer);
+            window.removeEventListener('ethereum#initialized', onInitialized);
+            resolve(window.ethereum || null);
+          }
+        }, 100);
+      });
+    }
+
+    async function ensureEthereumNetwork(provider) {
+      if (!provider) return false;
+      try {
+        const chainId = await provider.request({ method: 'eth_chainId' });
+        if (chainId && chainId.toLowerCase() === REQUIRED_CHAIN_ID.toLowerCase()) {
+          return true;
+        }
+
+        try {
+          await provider.request({
+            method: 'wallet_switchEthereumChain',
+            params: [{ chainId: REQUIRED_CHAIN_ID }]
+          });
+          return true;
+        } catch (switchErr) {
+          // Error 4902 indicates chain has not been added to MetaMask yet
+          const isUnrecognized = switchErr.code === 4902 ||
+            (switchErr.message && (switchErr.message.includes('4902') || switchErr.message.toLowerCase().includes('unrecognized chain')));
+
+          if (isUnrecognized) {
+            try {
+              await provider.request({
+                method: 'wallet_addEthereumChain',
+                params: [{
+                  chainId: REQUIRED_CHAIN_ID,
+                  chainName: REQUIRED_NETWORK_NAME,
+                  nativeCurrency: { name: 'Sepolia ETH', symbol: 'ETH', decimals: 18 },
+                  rpcUrls: [ETH_RPC_URL || 'https://rpc.sepolia.org'],
+                  blockExplorerUrls: [ETH_BLOCK_EXPLORER || 'https://sepolia.etherscan.io']
+                }]
+              });
+              return true;
+            } catch (addErr) {
+              console.error('wallet_addEthereumChain error:', addErr);
+              alert(`Could not automatically add ${REQUIRED_NETWORK_NAME} to your wallet. Please switch to it manually.`);
+              return false;
+            }
+          } else {
+            console.error('wallet_switchEthereumChain error:', switchErr);
+            alert(`Please switch your wallet to ${REQUIRED_NETWORK_NAME} before continuing.`);
+            return false;
+          }
+        }
+      } catch (err) {
+        console.error('Network check error:', err);
+        return false;
+      }
+    }
+
+    async function requestAccountsSafely(provider, forcePrompt = false) {
+      if (!provider) return [];
+      if (forcePrompt) {
+        try {
+          await provider.request({
+            method: 'wallet_requestPermissions',
+            params: [{ eth_accounts: {} }]
+          });
+        } catch (permErr) {
+          // MetaMask mobile frequently rejects or doesn't support wallet_requestPermissions
+          console.warn('wallet_requestPermissions skipped or unsupported on mobile:', permErr);
+        }
+      }
+
+      const accounts = await provider.request({ method: 'eth_requestAccounts' });
+      return accounts || [];
     }
 
     async function verifyWallet(address, silent = false) {
@@ -618,37 +825,48 @@
       return true;
     }
 
-    async function connectWallet() {
-      if (!window.ethereum) {
-        alert('Install MetaMask and add the ' + REQUIRED_NETWORK_NAME + ' network first.');
-        return;
-      }
-
-      const chainId = await window.ethereum.request({ method: 'eth_chainId' });
-      if (chainId !== REQUIRED_CHAIN_ID) {
-        try {
-          await window.ethereum.request({
-            method: 'wallet_switchEthereumChain',
-            params: [{ chainId: REQUIRED_CHAIN_ID }]
-          });
-        } catch (err) {
-          alert('Switch MetaMask to ' + REQUIRED_NETWORK_NAME + ' before connecting.');
-          return;
+    // Global AuthChainWallet Helper for all templates
+    window.AuthChainWallet = {
+      isMobile: isMobileDevice,
+      getDeepLink: getMetaMaskDeepLink,
+      promptMobileConnect: showMobileMetaMaskModal,
+      getProvider: getEthereumProvider,
+      ensureNetwork: ensureEthereumNetwork,
+      requestAccounts: requestAccountsSafely,
+      verifyWallet: verifyWallet,
+      getProviderOrPrompt: async function(actionContext = 'connect your wallet') {
+        const provider = await getEthereumProvider();
+        if (!provider) {
+          if (isMobileDevice()) {
+            showMobileMetaMaskModal(actionContext);
+          } else {
+            alert(`MetaMask is not detected. Please install the MetaMask browser extension and use ${REQUIRED_NETWORK_NAME}.`);
+          }
+          return null;
         }
+        const netOk = await ensureEthereumNetwork(provider);
+        if (!netOk) return null;
+        return provider;
       }
+    };
 
-      // Force MetaMask to prompt for account selection instead of auto-connecting
-      await window.ethereum.request({
-        method: 'wallet_requestPermissions',
-        params: [{ eth_accounts: {} }]
-      });
-      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-      if (!accounts.length) return;
+    async function connectWallet() {
+      const provider = await window.AuthChainWallet.getProviderOrPrompt('connect your wallet');
+      if (!provider) return;
 
-      const ok = await verifyWallet(accounts[0]);
-      if (ok) {
-        walletButton.classList.add('connected');
-        walletLabel.textContent = shortWallet(accounts[0]);
+      try {
+        const accounts = await window.AuthChainWallet.requestAccounts(provider, true);
+        if (!accounts.length) return;
+
+        const ok = await verifyWallet(accounts[0]);
+        if (ok && walletButton && walletLabel) {
+          walletButton.classList.add('connected');
+          walletLabel.textContent = shortWallet(accounts[0]);
+        }
+      } catch (err) {
+        if (err.code === 4001) return; // User rejected request
+        console.error('Wallet connect error:', err);
+        alert(err.message || 'Failed to connect MetaMask.');
       }
     }
 
@@ -656,20 +874,30 @@
       walletButton.addEventListener('click', connectWallet);
     }
 
-    if (window.ethereum) {
-      window.ethereum.on('accountsChanged', async (accounts) => {
-        if (accounts.length) {
-          const ok = await verifyWallet(accounts[0], true);
-          if (ok) {
-            walletButton.classList.add('connected');
-            walletLabel.textContent = shortWallet(accounts[0]);
-          } else {
+    // Initialize provider listeners when ready
+    getEthereumProvider().then(provider => {
+      if (provider) {
+        provider.on('accountsChanged', async (accounts) => {
+          if (accounts && accounts.length) {
+            const ok = await verifyWallet(accounts[0], true);
+            if (ok && walletButton && walletLabel) {
+              walletButton.classList.add('connected');
+              walletLabel.textContent = shortWallet(accounts[0]);
+            } else if (walletButton && walletLabel) {
+              walletButton.classList.remove('connected');
+              walletLabel.textContent = 'Connect MetaMask';
+            }
+          } else if (walletButton && walletLabel) {
             walletButton.classList.remove('connected');
-            walletLabel.textContent = 'Connect Wallet';
+            walletLabel.textContent = 'Connect MetaMask';
           }
-        }
-      });
-    }
+        });
+
+        provider.on('chainChanged', () => {
+          window.location.reload();
+        });
+      }
+    });
   </script>
   {% endif %}
   {% block scripts %}{% endblock %}

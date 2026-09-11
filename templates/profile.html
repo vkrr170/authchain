@@ -242,25 +242,18 @@ async function linkProfileWallet() {
     return;
   }
 
-  if (!window.ethereum) {
-    alert('MetaMask is not installed. Please install it first.');
-    return;
-  }
+  const ethProvider = await window.AuthChainWallet.getProviderOrPrompt('link your wallet');
+  if (!ethProvider) return;
   
   try {
-    // Force MetaMask to prompt account selection
-    await window.ethereum.request({
-      method: 'wallet_requestPermissions',
-      params: [{ eth_accounts: {} }]
-    });
-
-    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+    // Request accounts, safely attempting account picker prompt if supported
+    const accounts = await window.AuthChainWallet.requestAccounts(ethProvider, true);
     if (!accounts || accounts.length === 0) return;
     
     const lowerAccounts = accounts.map(a => a.toLowerCase());
     
     if (!lowerAccounts.includes(enteredAddress)) {
-      alert(`Verification failed: The entered address (${enteredAddress}) was not selected in MetaMask. Please verify & link again and make sure to check the box for that specific account.`);
+      alert(`Verification failed: The entered address (${enteredAddress}) was not selected in MetaMask. Please verify & link again and make sure that account is active in MetaMask.`);
       return;
     }
 
