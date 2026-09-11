@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+{% block title %}Confirm Re-Scan — AuthChain{% endblock %}
+{% block page_title %}Verification Confirmation{% endblock %}
+
+{% block head %}
+<style>
+  .confirm-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+  }
+  .confirm-choice-btn {
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: 14px;
+    padding: 22px;
+    text-align: left;
+    transition: all 0.25s ease;
+    cursor: pointer;
+    width: 100%;
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    color: var(--text);
+  }
+  .confirm-choice-yes:hover, .confirm-choice-yes:focus {
+    border-color: var(--success) !important;
+    background: rgba(0, 230, 118, 0.08) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 230, 118, 0.18);
+  }
+  .confirm-choice-no:hover, .confirm-choice-no:focus {
+    border-color: var(--accent) !important;
+    background: rgba(255, 61, 113, 0.08) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(255, 61, 113, 0.18);
+  }
+  .choice-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 4px;
+    font-family: 'Syne', sans-serif;
+  }
+  .choice-desc {
+    font-size: 0.84rem;
+    color: var(--text-dim);
+    line-height: 1.4;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+
+    <!-- ALERT BANNER -->
+    <div style="background:rgba(0,229,255,0.08);border:2px solid var(--primary);border-radius:14px;padding:24px;margin-bottom:24px;text-align:center;">
+      <div style="font-size:2.8rem;margin-bottom:8px;">🛡️</div>
+      <div style="font-size:1.35rem;font-weight:800;color:var(--primary);margin-bottom:6px;">
+        Product Found in Your Scan History
+      </div>
+      <div style="color:var(--text);font-size:.92rem;max-width:580px;margin:0 auto;">
+        This item is already registered in your account. You previously verified it on 
+        <strong style="color:var(--primary);">{{ prior_scan.timestamp | ts }}</strong>.
+      </div>
+    </div>
+
+    <!-- PRODUCT SUMMARY CARD -->
+    <div class="ac-card mb-4">
+      <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:center;">
+        <div style="flex-shrink:0;">
+          {% if product.image and product.image != 'default.png' %}
+          <img src="{{ url_for('static', filename='product_images/' + product.image) }}"
+               style="width:110px;height:110px;object-fit:contain;background:var(--surface2);border-radius:12px;border:1px solid var(--border);" alt="Product"/>
+          {% else %}
+          <div style="width:110px;height:110px;background:var(--surface2);border-radius:12px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:2.8rem;">📦</div>
+          {% endif %}
+        </div>
+        <div style="flex:1;min-width:260px;">
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+            <div style="background:rgba(0,229,255,0.08);border:1px solid rgba(0,229,255,0.2);border-radius:6px;padding:3px 8px;">
+              <span style="font-size:.65rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;">PUID </span>
+              <span class="mono" style="color:var(--primary);font-size:.78rem;font-weight:700;">{{ product.puid or '—' }}</span>
+            </div>
+            <div style="background:rgba(0,230,118,0.08);border:1px solid rgba(0,230,118,0.2);border-radius:6px;padding:3px 8px;">
+              <span style="font-size:.65rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;">SUID </span>
+              <span class="mono" style="color:var(--success);font-size:.78rem;font-weight:700;">{{ product.suid or product.uid }}</span>
+            </div>
+          </div>
+          <h3 style="font-size:1.3rem;font-weight:800;margin-bottom:4px;">{{ product.name }}</h3>
+          <div style="color:var(--text-dim);font-size:.85rem;margin-bottom:10px;">{{ product.brand }} · {{ product.category }}</div>
+          
+          <div style="display:flex;gap:20px;flex-wrap:wrap;font-size:.82rem;">
+            <div>
+              <span style="color:var(--text-dim);">Total Scans on System: </span>
+              <span class="mono" style="font-weight:700;color:var(--accent);">{{ product.scans }}</span>
+            </div>
+            <div>
+              <span style="color:var(--text-dim);">Batch: </span>
+              <span class="mono" style="font-weight:700;">{{ product.batch }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- INTERACTIVE QUESTION FORM -->
+    <div class="ac-card">
+      <div style="text-align:center;margin-bottom:24px;">
+        <div style="font-size:.72rem;letter-spacing:2px;color:var(--primary);text-transform:uppercase;font-weight:700;margin-bottom:8px;">
+          Unit Verification Check
+        </div>
+        <h4 style="font-size:1.35rem;font-weight:800;margin-bottom:8px;">
+          Is this the same physical unit you previously scanned?
+        </h4>
+        <p style="color:var(--text-dim);font-size:.88rem;max-width:580px;margin:0 auto;">
+          Each item has a unique Serial ID (<span class="mono" style="color:var(--success);">{{ product.suid or product.uid }}</span>). If you are re-scanning the physical item you previously verified, select <strong>Yes</strong>. If this is a different physical item, select <strong>No</strong>.
+        </p>
+      </div>
+
+      <form method="POST" action="{{ url_for('verify') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <input type="hidden" name="suid_input" value="{{ product.suid or product.uid }}"/>
+        <input type="hidden" name="puid_input" value="{{ product.puid }}"/>
+
+        <div class="row g-3 mb-4">
+          <!-- OPTION: YES -->
+          <div class="col-md-6">
+            <button type="submit" name="rescan_confirm" value="yes" class="confirm-choice-btn confirm-choice-yes">
+              <div style="width:44px;height:44px;border-radius:10px;background:rgba(0,230,118,0.12);border:1px solid var(--success);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <i class="bi bi-check-circle-fill" style="color:var(--success);font-size:1.4rem;"></i>
+              </div>
+              <div>
+                <div class="choice-title" style="color:var(--success);">Yes, this is the same unit</div>
+                <div class="choice-desc">
+                  I am re-scanning the physical item I previously verified. Confirm as Genuine.
+                </div>
+              </div>
+            </button>
+          </div>
+
+          <!-- OPTION: NO -->
+          <div class="col-md-6">
+            <button type="submit" name="rescan_confirm" value="no" class="confirm-choice-btn confirm-choice-no">
+              <div style="width:44px;height:44px;border-radius:10px;background:rgba(255,61,113,0.12);border:1px solid var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <i class="bi bi-exclamation-triangle-fill" style="color:var(--accent);font-size:1.4rem;"></i>
+              </div>
+              <div>
+                <div class="choice-title" style="color:var(--accent);">No, this is a different unit</div>
+                <div class="choice-desc">
+                  I am scanning a different physical unit. Flag this code as a potential duplicate or counterfeit.
+                </div>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <div style="text-align:center;border-top:1px solid var(--border);padding-top:16px;">
+          <a href="{{ url_for('scan') }}" style="color:var(--text-dim);font-size:.84rem;text-decoration:none;">
+            <i class="bi bi-arrow-left me-1"></i>Cancel & return to scanner
+          </a>
+        </div>
+      </form>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

@@ -424,14 +424,28 @@ async function manufactureBlueprint(bpId) {
         statusDiv.textContent = `Confirming tx...`;
         
         let receipt = null;
-        while (receipt === null) {
-          receipt = await provider.getTransactionReceipt(tx.hash);
-          if (receipt === null) {
-            await new Promise(r => setTimeout(r, 2000));
+        try {
+          receipt = await tx.wait(1);
+        } catch (waitErr) {
+          console.warn("tx.wait threw, checking for replacement or polling...", waitErr);
+          if (waitErr.receipt) {
+            receipt = waitErr.receipt;
+          } else if (waitErr.replacement) {
+            receipt = await waitErr.replacement.wait(1);
+          } else {
+            let attempts = 0;
+            while (!receipt && attempts < 30) {
+              receipt = await provider.getTransactionReceipt(tx.hash);
+              if (!receipt) {
+                await new Promise(r => setTimeout(r, 2000));
+                attempts++;
+              }
+            }
+            if (!receipt) throw waitErr;
           }
         }
         
-        lastTxHash = tx.hash;
+        lastTxHash = receipt.hash || tx.hash;
       }
     } else {
       lastTxHash = '0x' + Array.from({length: 64}, () => Math.floor(Math.random() * 16).toString(16)).join('');

@@ -333,17 +333,33 @@ if (btn) btn.addEventListener('click', async function() {
         btn.innerHTML = `<i class="spinner-border spinner-border-sm me-2"></i> Confirming ${Math.floor(i/chunkSize) + 1}/${Math.ceil(blocks.length/chunkSize)}...`;
         
         let receipt = null;
-        while (receipt === null) {
-          receipt = await provider.getTransactionReceipt(tx.hash);
-          if (receipt === null) {
-            await new Promise(r => setTimeout(r, 2000));
+        try {
+          receipt = await tx.wait(1);
+        } catch (waitErr) {
+          console.warn("tx.wait threw, checking for replacement or polling...", waitErr);
+          if (waitErr.receipt) {
+            receipt = waitErr.receipt;
+          } else if (waitErr.replacement) {
+            receipt = await waitErr.replacement.wait(1);
+          } else {
+            let attempts = 0;
+            while (!receipt && attempts < 30) {
+              receipt = await provider.getTransactionReceipt(tx.hash);
+              if (!receipt) {
+                await new Promise(r => setTimeout(r, 2000));
+                attempts++;
+              }
+            }
+            if (!receipt) throw waitErr;
           }
         }
         if (receipt.status === 0) {
           localStorage.removeItem('pendingTransfer');
           throw new Error('Blockchain transaction was reverted. No tokens were transferred.');
         }
-        lastTxHash = tx.hash;
+        lastTxHash = receipt.hash || tx.hash;
+        // Keep pendingTransfer synced with actual confirmed hash
+        localStorage.setItem('pendingTransfer', JSON.stringify({ tx_hash: lastTxHash, blocks }));
       }
     } else {
       lastTxHash = '0x' + Array.from({length:64}, () => Math.floor(Math.random()*16).toString(16)).join('');
@@ -388,13 +404,30 @@ if (btn) btn.addEventListener('click', async function() {
     recoverBtn.disabled = true;
     recoverBtn.textContent = 'Recovering…';
     try {
-      const res = await fetch('/api/transfer/recover', {
+      let txHash = state.tx_hash;
+      let res = await fetch('/api/transfer/recover', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tx_hash: state.tx_hash, blocks: state.blocks })
+        body: JSON.stringify({ tx_hash: txHash, blocks: state.blocks })
       }).then(r => r.json());
-      if (!res.ok) throw new Error(res.error);
+
+      if (!res.ok) {
+        // If the saved hash was dropped/replaced, prompt user for actual confirmed hash from MetaMask
+        const manualHash = prompt('The saved transaction was not found on-chain (it may have been sped up or replaced in MetaMask). Please enter the confirmed Transaction Hash from MetaMask (or click Cancel):', txHash);
+        if (manualHash && manualHash.trim() && manualHash.trim() !== txHash) {
+          txHash = manualHash.trim();
+          state.tx_hash = txHash;
+          localStorage.setItem('pendingTransfer', JSON.stringify(state));
+          res = await fetch('/api/transfer/recover', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tx_hash: txHash, blocks: state.blocks })
+          }).then(r => r.json());
+          if (!res.ok) throw new Error(res.error);
+        } else {
+          throw new Error(res.error);
+        }
+      }
       localStorage.removeItem('pendingTransfer');
-      alert('Recovery successful! ' + res.message);
+      alert('Recovery successful! ' + (res.message || 'Transfer finalized in database.'));
       window.location.reload();
     } catch (err) {
       alert('Recovery failed: ' + err.message);

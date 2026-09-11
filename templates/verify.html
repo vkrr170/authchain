@@ -28,8 +28,16 @@
     {% else %}
     <div style="background:rgba(0,230,118,0.1);border:2px solid var(--success);border-radius:14px;padding:24px;margin-bottom:24px;text-align:center;">
       <div style="font-size:3rem;margin-bottom:8px;">✅</div>
-      <div style="font-size:1.4rem;font-weight:800;color:var(--success);margin-bottom:6px;">Product Verified — Genuine</div>
-      <div style="color:var(--text-dim);font-size:.9rem;">All checks passed: PUID ✓ Not Recalled ✓ Not Expired ✓ Blockchain Ledger ✓ Delivered to Customer ✓</div>
+      <div style="font-size:1.4rem;font-weight:800;color:var(--success);margin-bottom:6px;">
+        {% if is_rescan %}Product Re-Verified — Genuine{% else %}Product Verified — Genuine{% endif %}
+      </div>
+      <div style="color:var(--text-dim);font-size:.9rem;">
+        {% if is_rescan %}
+          You have successfully re-verified your genuine product. It is present in your scan history and all blockchain ledger checks passed ✓
+        {% else %}
+          All checks passed: PUID ✓ Not Recalled ✓ Not Expired ✓ Blockchain Ledger ✓ Delivered to Customer ✓
+        {% endif %}
+      </div>
     </div>
     {% endif %}
 

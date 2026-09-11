@@ -59,6 +59,7 @@ products_col     = db["products"]
 transactions_col = db["transactions"]
 blocks_col       = db["blocks"]
 blueprints_col   = db["blueprints"]
+scans_col        = db["scans"]
 
 # Ensure database indexes exist for query performance
 try:
@@ -68,6 +69,8 @@ try:
     products_col.create_index("owner")
     blocks_col.create_index([("suid", 1), ("index", 1)], unique=True)
     transactions_col.create_index("suid")
+    scans_col.create_index([("username", 1), ("suid", 1)])
+    scans_col.create_index("suid")
 except Exception as e:
     app.logger.warning(f"Could not create database indexes: {e}")
 
@@ -79,6 +82,19 @@ ETH_NETWORK_NAME = os.environ.get("ETH_NETWORK_NAME", "Sepolia")
 METAMASK_CHAIN_ID_HEX = os.environ.get("METAMASK_CHAIN_ID_HEX", hex(ETH_CHAIN_ID))
 
 AUTHCHAIN_CONTRACT_ABI = [
+    {
+        "anonymous": False,
+        "inputs": [
+            {"indexed": True, "internalType": "string", "name": "blockId", "type": "string"},
+            {"indexed": True, "internalType": "uint256", "name": "tokenId", "type": "uint256"},
+            {"indexed": False, "internalType": "string", "name": "puid", "type": "string"},
+            {"indexed": False, "internalType": "string", "name": "suid", "type": "string"},
+            {"indexed": False, "internalType": "string", "name": "action", "type": "string"},
+            {"indexed": False, "internalType": "bytes32", "name": "blockHash", "type": "bytes32"}
+        ],
+        "name": "ProductEventRecorded",
+        "type": "event"
+    },
     {
         "inputs": [
             {"internalType": "string", "name": "blockId", "type": "string"},
@@ -996,7 +1012,7 @@ def api_product_confirm():
             _, contract = ethereum_contract()
             if contract:
                 processed_events = contract.events.ProductEventRecorded().process_receipt(receipt)
-                valid_block_ids = [e['args']['blockId'] for e in processed_events]
+                valid_block_ids = [Web3.to_hex(e['args']['blockId']) for e in processed_events]
         except Exception as e:
             return jsonify({"ok": False, "error": f"Error verifying tx: {str(e)}"}), 400
 
@@ -1014,7 +1030,8 @@ def api_product_confirm():
             return jsonify({"ok": False, "error": f"Block hash mismatch for {block.get('suid')}"}), 400
         if not verify_server_signature(expected_hash, block.get("signature")):
             return jsonify({"ok": False, "error": f"Invalid server signature for {block.get('suid')}"}), 400
-        if valid_block_ids and block["block_id"] not in valid_block_ids:
+        target_hash = Web3.to_hex(Web3.keccak(text=block["block_id"]))
+        if valid_block_ids and target_hash not in valid_block_ids:
             return jsonify({"ok": False, "error": f"Block ID {block['block_id']} not found in transaction logs"}), 400
 
         block["uid"]         = block["suid"]
@@ -1241,11 +1258,37 @@ def product_details(suid):
         {"$sort": {"_id": 1}}
     ]))
 
+    scan_history = list(scans_col.find({"$or": [{"suid": suid}, {"uid": suid}]}).sort("timestamp", 1))
+
+    # If product has recorded scans but scans_col has fewer records (e.g. from before collection was introduced)
+    total_scans_count = product.get("scans", 0)
+    if total_scans_count > len(scan_history):
+        missing_count = total_scans_count - len(scan_history)
+        base_ts = product.get("timestamp")
+        if not base_ts and txns:
+            base_ts = txns[-1].get("timestamp")
+        if not base_ts:
+            base_ts = int(time.time()) - 3600
+
+        prepended = []
+        for i in range(missing_count):
+            prepended.append({
+                "username": product.get("owner", "Customer"),
+                "suid": suid,
+                "puid": product.get("puid"),
+                "name": product.get("name"),
+                "brand": product.get("brand"),
+                "timestamp": base_ts + (i * 60),
+                "status": "GENUINE"
+            })
+        scan_history = prepended + scan_history
+
     return render_template("product_details.html",
                            product=enrich_product(product),
                            txns=txns,
                            batch_count=batch_count,
-                           all_batches=all_batches)
+                           all_batches=all_batches,
+                           scan_history=scan_history)
 
 # ── Recall Batch ──────────────────────────────────────────
 @app.route("/recall/<puid>", methods=["GET", "POST"])
@@ -1351,7 +1394,7 @@ def api_recall_confirm():
             _, contract = ethereum_contract()
             if contract:
                 processed_events = contract.events.ProductEventRecorded().process_receipt(receipt)
-                valid_block_ids = [e['args']['blockId'] for e in processed_events]
+                valid_block_ids = [Web3.to_hex(e['args']['blockId']) for e in processed_events]
         except Exception as e:
             return jsonify({"ok": False, "error": f"Error verifying transaction: {str(e)}"}), 400
 
@@ -1369,7 +1412,8 @@ def api_recall_confirm():
             return jsonify({"ok": False, "error": f"Block hash mismatch for {block.get('suid')}"}), 400
         if not verify_server_signature(expected_hash, block.get("signature")):
             return jsonify({"ok": False, "error": f"Invalid server signature for {block.get('suid')}"}), 400
-        if valid_block_ids and block["block_id"] not in valid_block_ids:
+        target_hash = Web3.to_hex(Web3.keccak(text=block["block_id"]))
+        if valid_block_ids and target_hash not in valid_block_ids:
             return jsonify({"ok": False, "error": f"Block ID {block['block_id']} not found in transaction logs"}), 400
         block["uid"]         = block["suid"]
         block["ethereum_tx"] = tx_hash
@@ -1574,7 +1618,7 @@ def api_transfer_confirm():
             _, contract = ethereum_contract()
             if contract:
                 processed_events = contract.events.ProductEventRecorded().process_receipt(receipt)
-                valid_block_ids = [e['args']['blockId'] for e in processed_events]
+                valid_block_ids = [Web3.to_hex(e['args']['blockId']) for e in processed_events]
         except Exception as e:
             return jsonify({"ok": False, "error": f"Error verifying transaction: {str(e)}"}), 400
 
@@ -1593,7 +1637,8 @@ def api_transfer_confirm():
             return jsonify({"ok": False, "error": f"Block hash mismatch for {block.get('suid')}"}), 400
         if not verify_server_signature(expected_hash, block.get("signature")):
             return jsonify({"ok": False, "error": f"Invalid server signature for {block.get('suid')}"}), 400
-        if valid_block_ids and block["block_id"] not in valid_block_ids:
+        target_hash = Web3.to_hex(Web3.keccak(text=block["block_id"]))
+        if valid_block_ids and target_hash not in valid_block_ids:
             return jsonify({"ok": False, "error": f"Block ID {block['block_id']} not found in transaction logs"}), 400
 
         block["uid"]         = block["suid"]
@@ -1743,6 +1788,7 @@ def scan():
 @role_required("Customer")
 def verify():
     puid = suid = None
+    rescan_confirm = (request.form.get("rescan_confirm") or request.args.get("rescan_confirm") or "").strip().lower()
 
     if request.method == "POST":
         uid_input  = request.form.get("uid_input", "").strip()
@@ -1836,21 +1882,123 @@ def verify():
                                fail_reason="This product has not completed the supply chain.",
                                is_recalled=False, is_expired=False)
 
-    # ── Check 6: Duplicate scan ───────────────────────────
+    # ── Check 6: Duplicate scan check with user scan history ───────────────
     if product.get("scans", 0) > 0:
-        products_col.update_one({"_id": product["_id"]}, {"$inc": {"scans": 1}})
-        return render_template("verify.html",
-                               product=enrich_product(products_col.find_one({"_id": product["_id"]})),
-                               fail_heading="Duplicate Product",
-                               fail_emoji="⚠️",
-                               fail_reason="This product has been scanned more than once, indicating it might be a duplicate or counterfeit.",
-                               is_recalled=False, is_expired=False)
+        username = session["username"]
+        # Check user's scan history
+        prior_scan = scans_col.find_one(
+            {"username": username, "suid": suid},
+            sort=[("timestamp", -1)]
+        )
+        # Fallback: if user is the product owner (e.g. existing records prior to scans_col)
+        if not prior_scan and product.get("owner") == username:
+            prior_scan = {
+                "username": username,
+                "suid": suid,
+                "timestamp": product.get("timestamp") or int(time.time()),
+                "status": "GENUINE"
+            }
 
-    # Owner is Customer — product has completed the full supply chain
+        if prior_scan:
+            # ── Branch A: Present in user scan history ──
+            # Pose the question only if user confirmation is not yet submitted
+            if not rescan_confirm:
+                return render_template(
+                    "verify_confirm.html",
+                    product=enrich_product(product),
+                    prior_scan=prior_scan
+                )
+            elif rescan_confirm == "yes":
+                # User intentionally scanned the same product again -> Genuine Re-verification
+                now = int(time.time())
+                products_col.update_one({"_id": product["_id"]}, {"$inc": {"scans": 1}})
+                scans_col.insert_one({
+                    "username": username,
+                    "suid": suid,
+                    "puid": product.get("puid"),
+                    "name": product.get("name"),
+                    "brand": product.get("brand"),
+                    "timestamp": now,
+                    "status": "RE_VERIFIED"
+                })
+                updated_product = enrich_product(products_col.find_one({"_id": product["_id"]}))
+                return render_template(
+                    "verify.html",
+                    product=updated_product,
+                    fail_reason=None,
+                    is_recalled=False,
+                    is_expired=False,
+                    is_rescan=True
+                )
+            else:
+                # User selected "no" -> indicate duplicate/counterfeit
+                now = int(time.time())
+                products_col.update_one({"_id": product["_id"]}, {"$inc": {"scans": 1}})
+                scans_col.insert_one({
+                    "username": username,
+                    "suid": suid,
+                    "puid": product.get("puid"),
+                    "name": product.get("name"),
+                    "brand": product.get("brand"),
+                    "timestamp": now,
+                    "status": "DUPLICATE_REPORTED"
+                })
+                updated_product = enrich_product(products_col.find_one({"_id": product["_id"]}))
+                return render_template(
+                    "verify.html",
+                    product=updated_product,
+                    fail_heading="Duplicate Product",
+                    fail_emoji="⚠️",
+                    fail_reason="This product code was previously scanned, but you indicated that you have not scanned it before. This suggests the QR code may be an unauthorized duplicate or counterfeit.",
+                    is_recalled=False,
+                    is_expired=False
+                )
+        else:
+            # ── Branch B: NOT in user scan history ──
+            # Directly flag as duplicate or counterfeit without posing any question
+            now = int(time.time())
+            products_col.update_one({"_id": product["_id"]}, {"$inc": {"scans": 1}})
+            scans_col.insert_one({
+                "username": username,
+                "suid": suid,
+                "puid": product.get("puid"),
+                "name": product.get("name"),
+                "brand": product.get("brand"),
+                "timestamp": now,
+                "status": "DUPLICATE_UNAUTHORIZED"
+            })
+            updated_product = enrich_product(products_col.find_one({"_id": product["_id"]}))
+            return render_template(
+                "verify.html",
+                product=updated_product,
+                fail_heading="Duplicate Product",
+                fail_emoji="⚠️",
+                fail_reason="This product has already been scanned by another user and does not exist in your scan history. This indicates it might be an unauthorized duplicate or counterfeit.",
+                is_recalled=False,
+                is_expired=False
+            )
+
+    # ── First time ever scanned (scans == 0) ──
+    now = int(time.time())
     products_col.update_one({"_id": product["_id"]}, {"$inc": {"scans": 1}})
+    scans_col.insert_one({
+        "username": session["username"],
+        "suid": suid,
+        "puid": product.get("puid"),
+        "name": product.get("name"),
+        "brand": product.get("brand"),
+        "timestamp": now,
+        "status": "GENUINE"
+    })
     product = enrich_product(products_col.find_one({"_id": product["_id"]}))
-    return render_template("verify.html", product=product,
-                           fail_reason=None, is_recalled=False, is_expired=False)
+    return render_template(
+        "verify.html",
+        product=product,
+        fail_reason=None,
+        is_recalled=False,
+        is_expired=False,
+        is_rescan=False
+    )
 
 # ── Search ────────────────────────────────────────────────
 @app.route("/search", methods=["GET", "POST"])
@@ -2155,4 +2303,4 @@ if __name__ == "__main__":
     os.makedirs(os.path.join(app.root_path, "static", "qrcodes"), exist_ok=True)
     os.makedirs(os.path.join(app.root_path, "static", "product_images"), exist_ok=True)
     port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port, debug=False)
+    app.run(host="0.0.0.0", port=port, debug=False, threaded=True)

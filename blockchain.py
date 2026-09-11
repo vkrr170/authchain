@@ -12,6 +12,19 @@ ETH_PRIVATE_KEY = os.environ.get("ETH_PRIVATE_KEY", "").strip()
 
 AUTHCHAIN_CONTRACT_ABI = [
     {
+        "anonymous": False,
+        "inputs": [
+            {"indexed": True, "internalType": "string", "name": "blockId", "type": "string"},
+            {"indexed": True, "internalType": "uint256", "name": "tokenId", "type": "uint256"},
+            {"indexed": False, "internalType": "string", "name": "puid", "type": "string"},
+            {"indexed": False, "internalType": "string", "name": "suid", "type": "string"},
+            {"indexed": False, "internalType": "string", "name": "action", "type": "string"},
+            {"indexed": False, "internalType": "bytes32", "name": "blockHash", "type": "bytes32"}
+        ],
+        "name": "ProductEventRecorded",
+        "type": "event"
+    },
+    {
         "inputs": [
             {"internalType": "string", "name": "blockId", "type": "string"},
             {"internalType": "string", "name": "puid", "type": "string"},

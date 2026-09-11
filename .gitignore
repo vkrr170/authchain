@@ -34,3 +34,6 @@ Thumbs.db
 
 # Node
 node_modules/
+
+# Scratch directory
+scratch/
