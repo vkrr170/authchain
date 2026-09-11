@@ -11,7 +11,7 @@ import csv
 import re
 from difflib import SequenceMatcher
 from werkzeug.utils import secure_filename
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from functools import wraps
 from dotenv import load_dotenv
 from authlib.integrations.flask_client import OAuth
@@ -25,11 +25,27 @@ except ImportError:
     Web3 = None
     encode_defunct = None
 
-from flask_wtf.csrf import CSRFProtect
+from flask_wtf.csrf import CSRFProtect, CSRFError
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY") or os.urandom(24).hex()
+app.secret_key = os.environ.get("SECRET_KEY") or "authchain-session-secret-key-prod-9a8b7c6d5e"
+app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=14)
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+app.config["SESSION_COOKIE_SECURE"] = False  # Allows persistent session on LAN HTTP
+
 csrf = CSRFProtect(app)
+
+@app.before_request
+def make_session_permanent():
+    session.permanent = True
+
+@app.errorhandler(CSRFError)
+def handle_csrf_error(e):
+    if request.is_json or request.path.startswith("/api/"):
+        return jsonify({"ok": False, "error": "CSRF token missing or expired. Please refresh the page."}), 400
+    flash("Session security token expired or missing. Please refresh and try again.", "warning")
+    return redirect(request.referrer or url_for("index"))
 
 oauth = OAuth(app)
 google = oauth.register(
@@ -544,6 +560,7 @@ def login():
     if request.method == "POST":
         user = users_col.find_one({"username": request.form["username"]})
         if user and bcrypt.checkpw(request.form["password"].encode(), user["password"]):
+            session.permanent = True
             session["username"] = user["username"]
             session["role"]     = user["role"]
             session["fullname"] = user["fullname"]
@@ -1799,7 +1816,23 @@ def verify():
         suid_input = request.form.get("suid_input", "").strip().upper()
 
         if uid_input:
-            if ":" in uid_input:
+            if uid_input.startswith("http://") or uid_input.startswith("https://"):
+                try:
+                    from urllib.parse import urlparse, parse_qs
+                    parsed = urlparse(uid_input)
+                    qs = parse_qs(parsed.query)
+                    if "uid" in qs:
+                        uid_input = qs["uid"][0]
+                    elif "suid" in qs:
+                        uid_input = qs["suid"][0]
+                    else:
+                        path_parts = [p for p in parsed.path.split("/") if p]
+                        if path_parts:
+                            uid_input = path_parts[-1]
+                except Exception:
+                    pass
+
+            if uid_input.startswith("BC:") or (":" in uid_input and not (uid_input.startswith("http://") or uid_input.startswith("https://"))):
                 puid, suid = verify_qr_data(uid_input)
                 if not suid:
                     flash("Invalid or tampered QR code — blockchain verification failed.", "danger")
