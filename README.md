@@ -6,7 +6,7 @@
 
 Built with **Flask**, **MongoDB**, **Ethereum (Sepolia)**, and a custom **ERC-721 smart contract**.
 
-🔗 **Live**: [authchain.onrender.com](https://authchain.onrender.com)  
+🔗 **Live**: [authchain.vercel.app](https://authchain.vercel.app)  
 📦 **GitHub**: [github.com/vkrr170/authchain](https://github.com/vkrr170/authchain)
 
 ---
@@ -33,7 +33,7 @@ AuthChain gives every physical product unit a **blockchain identity**. Each unit
 | **Cryptography** | BLAKE2b hash chain for tamper-evident off-chain audit logs |
 | **Frontend** | HTML5, Vanilla CSS (glassmorphism dark mode), Vanilla JavaScript |
 | **QR Codes** | `qrcode` + Pillow — auto-generated per product unit |
-| **Deployment** | Render (Gunicorn, 2 workers) with `render.yaml` auto-deploy |
+| **Deployment** | Vercel (Serverless Functions) with `vercel.json` auto-deploy |
 
 ---
 

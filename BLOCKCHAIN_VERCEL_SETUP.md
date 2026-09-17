@@ -1,6 +1,6 @@
-# Blockchain Setup for Render Deployment
+# Blockchain Setup for Vercel Deployment
 
-Use a public Ethereum testnet for the deployed Render app. Ganache only works on your local machine because Render cannot reach `127.0.0.1:7545` on your laptop.
+Use a public Ethereum testnet for the deployed Vercel app. Ganache only works on your local machine because Vercel cannot reach `127.0.0.1:7545` on your laptop.
 
 ## Recommended Network
 
@@ -28,7 +28,7 @@ Create or import a wallet that the Flask server will use to write product lifecy
 
 Fund it with Sepolia test ETH from a faucet.
 
-Render must receive the private key as an environment variable:
+Vercel must receive the private key as an environment variable:
 
 ```text
 ETH_PRIVATE_KEY=your_server_wallet_private_key
@@ -66,9 +66,9 @@ Copy the printed contract address:
 AUTHCHAIN_CONTRACT_ADDRESS=0x...
 ```
 
-## 4. Set Render Environment Variables
+## 4. Set Vercel Environment Variables
 
-In Render dashboard, set:
+In Vercel dashboard, set:
 
 ```text
 WEB3_PROVIDER_URI=https://sepolia.infura.io/v3/YOUR_PROJECT_ID
@@ -88,24 +88,24 @@ ADMIN_USERNAME=...
 ADMIN_PASSWORD=...
 ```
 
-## 5. Push to GitHub and Redeploy Render
+## 5. Push to GitHub and Redeploy Vercel
 
 Commit and push these files:
 
 ```text
 app.py
 requirements.txt
-render.yaml
+vercel.json
 templates/base.html
 templates/ledger.html
 contracts/AuthChainLedger.sol
 scripts/deploy_contract.js
 package.json
 .env.example
-BLOCKCHAIN_RENDER_SETUP.md
+BLOCKCHAIN_VERCEL_SETUP.md
 ```
 
-Render will redeploy from GitHub.
+Vercel will redeploy from GitHub.
 
 ## 6. Connect MetaMask
 
