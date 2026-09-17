@@ -57,8 +57,24 @@ google = oauth.register(
 )
 
 # Ensure static subdirs exist
-os.makedirs(os.path.join(app.root_path, "static", "qrcodes"),        exist_ok=True)
-os.makedirs(os.path.join(app.root_path, "static", "product_images"), exist_ok=True)
+from flask import send_from_directory
+if os.environ.get("VERCEL"):
+    QR_DIR = "/tmp/qrcodes"
+    IMG_DIR = "/tmp/product_images"
+else:
+    QR_DIR = os.path.join(app.root_path, "static", "qrcodes")
+    IMG_DIR = os.path.join(app.root_path, "static", "product_images")
+
+@app.route('/static/qrcodes/<path:filename>')
+def serve_qrcodes(filename):
+    return send_from_directory(QR_DIR, filename)
+
+@app.route('/static/product_images/<path:filename>')
+def serve_product_images(filename):
+    return send_from_directory(IMG_DIR, filename)
+
+os.makedirs(QR_DIR, exist_ok=True)
+os.makedirs(IMG_DIR, exist_ok=True)
 
 @app.template_filter('ts')
 def timestamp_filter(ts):
@@ -190,7 +206,7 @@ def _sim(a, b):
     return SequenceMatcher(None, _norm(a), _norm(b)).ratio()
 
 def _find_image(name):
-    img_dir = os.path.join(app.root_path, "static", "product_images")
+    img_dir = IMG_DIR
     exts = (".jpg", ".jpeg", ".png", ".gif", ".webp")
     if not os.path.exists(img_dir):
         return ""
@@ -439,7 +455,7 @@ def index():
 # ── QR serving ────────────────────────────────────────────
 @app.route("/qr/<suid>")
 def serve_qr(suid):
-    qr_dir  = os.path.join(app.root_path, "static", "qrcodes")
+    qr_dir  = QR_DIR
     os.makedirs(qr_dir, exist_ok=True)
     qr_path = os.path.join(qr_dir, f"{suid}.png")
 
@@ -2336,7 +2352,7 @@ def api_product_bulk_blueprints():
     return jsonify({"ok": True, "message": f"{inserted} blueprints saved successfully!"})
 
 if __name__ == "__main__":
-    os.makedirs(os.path.join(app.root_path, "static", "qrcodes"), exist_ok=True)
-    os.makedirs(os.path.join(app.root_path, "static", "product_images"), exist_ok=True)
+    os.makedirs(QR_DIR, exist_ok=True)
+    os.makedirs(IMG_DIR, exist_ok=True)
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=False, threaded=True)
