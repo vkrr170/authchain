@@ -25,6 +25,12 @@
       <div style="font-size:1.4rem;font-weight:800;color:#ffd740;margin-bottom:6px;">Product Expired</div>
       <div style="color:var(--text-dim);font-size:.9rem;">This product's expiry date ({{ product.exp_date }}) has passed. Do not consume.</div>
     </div>
+    {% elif is_unsold %}
+    <div style="background:rgba(0,229,255,0.1);border:2px solid var(--primary);border-radius:14px;padding:24px;margin-bottom:24px;text-align:center;">
+      <div style="font-size:3rem;margin-bottom:8px;">🛍️</div>
+      <div style="font-size:1.4rem;font-weight:800;color:var(--primary);margin-bottom:6px;">Authentic Product</div>
+      <div style="color:var(--text-dim);font-size:.9rem;">This product is verified as authentic and is available for purchase.</div>
+    </div>
     {% else %}
     <div style="background:rgba(0,230,118,0.1);border:2px solid var(--success);border-radius:14px;padding:24px;margin-bottom:24px;text-align:center;">
       <div style="font-size:3rem;margin-bottom:8px;">✅</div>
@@ -94,6 +100,9 @@
         </div>
         <div style="display:flex;gap:10px;">
           {% set suid_val = product.suid or product.uid %}
+          {% if is_unsold %}
+          <a href="{{ url_for('checkout', suid=suid_val) }}" class="btn-primary-ac" style="background:var(--primary);color:#000;text-decoration:none;font-weight:700;padding:8px 20px;border-radius:8px;">Buy & Claim</a>
+          {% endif %}
           <a href="{{ url_for('product_details', suid=suid_val) }}" class="btn-outline-ac">View Details</a>
           <a href="{{ url_for('scan') }}" class="btn-primary-ac" style="text-decoration:none;color:#000;font-family:'Syne',sans-serif;font-weight:700;padding:8px 20px;border-radius:8px;">Scan Another</a>
         </div>

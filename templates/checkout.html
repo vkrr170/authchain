@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block title %}Checkout / Claim Product{% endblock %}
+{% block page_title %}Checkout / Claim Product{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-6">
+
+    <div style="background:rgba(0,229,255,0.05);border:1px solid var(--border);border-radius:14px;padding:30px;margin-bottom:24px;">
+      <h2 style="font-size:1.6rem;font-weight:800;margin-bottom:10px;color:var(--text);">Confirm Purchase</h2>
+      <p style="color:var(--text-dim);font-size:1rem;margin-bottom:24px;">
+        You are about to purchase and claim the digital twin (NFT) for this product.
+        Once claimed, you will be registered as the official owner on the blockchain.
+      </p>
+
+      <div class="ac-card" style="margin-bottom:24px;border:1px solid var(--border);border-radius:12px;background:var(--surface);">
+        <div style="display:flex;gap:20px;align-items:center;">
+          {% if product.image and product.image != 'default.png' %}
+          <img src="{{ url_for('static', filename='product_images/' + product.image) }}"
+               style="width:100px;height:100px;object-fit:contain;background:var(--surface2);border-radius:8px;" alt="Product"/>
+          {% else %}
+          <div style="width:100px;height:100px;background:var(--surface2);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:2.5rem;">📦</div>
+          {% endif %}
+          
+          <div>
+            <h3 style="font-size:1.3rem;font-weight:800;margin-bottom:4px;">{{ product.name }}</h3>
+            <div style="color:var(--text-dim);font-size:0.9rem;margin-bottom:10px;">{{ product.brand }} · {{ product.category }}</div>
+            <div style="font-size:1.1rem;font-weight:700;color:var(--primary);">₹{{ product.price_per_unit }}</div>
+          </div>
+        </div>
+      </div>
+
+      <form method="POST" action="{{ url_for('checkout', suid=product.suid) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <button type="submit" class="btn-primary-ac w-100" style="padding:14px;font-size:1.1rem;font-weight:700;border-radius:8px;background:var(--primary);color:#000;border:none;">
+          Confirm Purchase & Claim NFT
+        </button>
+      </form>
+
+      <div style="text-align:center;margin-top:16px;">
+        <a href="{{ url_for('verify', uid=product.suid) }}" style="color:var(--text-dim);text-decoration:none;font-size:0.9rem;">Cancel</a>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

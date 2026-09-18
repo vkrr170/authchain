@@ -162,11 +162,11 @@ AUTHCHAIN_CONTRACT_ABI = [
     },
 ]
 
-# ── Strict supply chain flow: M → D → R → C ─────────────
+# â”€â”€ Strict supply chain flow: M â†’ D â†’ R â†’ C â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 # Each stage can only pass to the immediately next stage.
-# Manufacturers → Distributors only.
-# Distributors → Retailers only.
-# Retailers → Customers only.
+# Manufacturers â†’ Distributors only.
+# Distributors â†’ Retailers only.
+# Retailers â†’ Customers only.
 SUPPLY_CHAIN_NEXT = {
     "Manufacturer": ["Distributor"],
     "Distributor":  ["Retailer"],
@@ -190,7 +190,7 @@ def get_dynamic_categories():
 
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
 
-# ── Helpers ──────────────────────────────────────────────
+# â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 def allowed_file(f):
     return "." in f and f.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
@@ -447,12 +447,12 @@ def category_filter_query():
     cat = request.args.get("category", "").strip()
     return {"category": cat} if cat else {}
 
-# ── Auth ─────────────────────────────────────────────────
+# â”€â”€ Auth â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 @app.route("/")
 def index():
     return redirect(url_for("login"))
 
-# ── QR serving ────────────────────────────────────────────
+# â”€â”€ QR serving â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 @app.route("/qr/<suid>")
 def serve_qr(suid):
     qr_dir  = QR_DIR
@@ -504,7 +504,7 @@ def register():
         password = request.form.get("password", "")
         confirm  = request.form.get("confirm", "")
 
-        # ── Mandatory field checks ────────────────────────
+        # â”€â”€ Mandatory field checks â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         if not fullname:
             flash("Full name is required.", "danger")
             return redirect(url_for("register"))
@@ -533,19 +533,19 @@ def register():
             flash("Passwords do not match.", "danger")
             return redirect(url_for("register"))
 
-        # ── Password strength validation ──────────────────────
+        # â”€â”€ Password strength validation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         password_pattern = r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).+$"
         if not re.match(password_pattern, password):
             flash("Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character.", "danger")
             return redirect(url_for("register"))
 
-        # ── Email format validation ───────────────────────
+        # â”€â”€ Email format validation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         email_pattern = r"^[^@\s]+@[^@\s]+\.[^@\s]+$"
         if not re.match(email_pattern, email):
             flash("Invalid email address format.", "danger")
             return redirect(url_for("register"))
 
-        # ── Duplicate checks ─────────────────────────────
+        # â”€â”€ Duplicate checks â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         if users_col.find_one({"username": username}):
             flash("Username already taken. Please choose another.", "danger")
             return redirect(url_for("register"))
@@ -736,7 +736,7 @@ def inject_blockchain_config():
         "eth_chain_id_dec":             ETH_CHAIN_ID,
     }
 
-# ── Dashboard ─────────────────────────────────────────────
+# â”€â”€ Dashboard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 @app.route("/dashboard")
 @login_required
 def dashboard():
@@ -801,7 +801,7 @@ def dashboard():
                            active_cat=active_cat,
                            cat_counts=cat_counts)
 
-# ── Inventory (View Manufactured Products) ──
+# â”€â”€ Inventory (View Manufactured Products) â”€â”€
 @app.route("/inventory")
 @login_required
 @role_required("Manufacturer", "Distributor", "Retailer", "Customer")
@@ -865,7 +865,7 @@ def add_product():
 def manufacture():
     return redirect(url_for("create_product"))
 
-# ── Image upload helper (used by create_product JS flow) ──
+# â”€â”€ Image upload helper (used by create_product JS flow) â”€â”€
 @app.route("/api/product/upload_image", methods=["POST"])
 @login_required
 @role_required("Manufacturer")
@@ -879,7 +879,7 @@ def api_product_upload_image():
     file.save(os.path.join(app.root_path, "static", "product_images", filename))
     return jsonify({"ok": True, "filename": filename})
 
-# ── Prepare signed block data for MetaMask minting ────────
+# â”€â”€ Prepare signed block data for MetaMask minting â”€â”€â”€â”€â”€â”€â”€â”€
 @app.route("/api/product/prepare", methods=["POST"])
 @login_required
 @role_required("Manufacturer")
@@ -921,7 +921,7 @@ def api_product_prepare():
             "puid":          puid,
             "suid":          suid,
             "action":        "MANUFACTURED",
-            "from_user":     "",          # no sender — this is a genesis/creation event
+            "from_user":     "",          # no sender â€” this is a genesis/creation event
             "to_user":       username,
             "previous_hash": "GENESIS",
             "token_id":      suid_to_token_id(suid),
@@ -942,7 +942,7 @@ def api_product_prepare():
 
     return jsonify({"ok": True, "blocks": prepared_blocks, "puid": puid, "batch": batch, "qty": qty})
 
-# ── Prepare signed block data for Blueprint minting ────────
+# â”€â”€ Prepare signed block data for Blueprint minting â”€â”€â”€â”€â”€â”€â”€â”€
 @app.route("/api/product/blueprint_prepare", methods=["POST"])
 @login_required
 @role_required("Manufacturer")
@@ -1023,7 +1023,7 @@ def api_product_blueprint_prepare():
 
     return jsonify({"ok": True, "blocks": prepared_blocks, "puid": puid, "batch": batch, "qty": qty})
 
-# ── Confirm after MetaMask tx confirmed ───────────────────
+# â”€â”€ Confirm after MetaMask tx confirmed â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 @app.route("/api/product/confirm", methods=["POST"])
 @login_required
 @role_required("Manufacturer")
@@ -1128,7 +1128,7 @@ def api_product_confirm():
 
     return jsonify({"ok": True, "message": f"{len(blocks)} unit(s) manufactured successfully!", "puid": puid})
 
-# ── Add Stock (restock existing product line) ─────────────
+# â”€â”€ Add Stock (restock existing product line) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 @app.route("/add_stock/<puid>", methods=["GET", "POST"])
 @login_required
 @role_required("Manufacturer")
@@ -1254,32 +1254,34 @@ def api_product_edit_blueprint(bp_id):
     return jsonify({"ok": True})
 
 @app.route("/product/<suid>")
-@login_required
 def product_details(suid):
     product = products_col.find_one({"suid": suid})
     if not product:
         product = products_col.find_one({"uid": suid})
     if not product:
         flash("Product not found.", "danger")
-        return redirect(url_for("dashboard"))
+        return redirect(url_for("scan"))
     txns = list(transactions_col.find({"suid": suid}).sort("timestamp", 1))
     if not txns:
         txns = list(transactions_col.find({"uid": suid}).sort("timestamp", 1))
 
-    # ── Authorization Check ──────────────────────────────────
-    username = session.get("username")
-    is_involved = False
-    if product.get("manufacturer") == username or product.get("owner") == username:
-        is_involved = True
-    else:
-        for txn in txns:
-            if txn.get("from_user") == username or txn.get("to_user") == username:
-                is_involved = True
-                break
+    # â”€â”€ Authorization Check â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    role = session.get("role")
+    if role in ["Manufacturer", "Distributor", "Retailer"]:
+        username = session.get("username")
+        is_involved = False
+        if product.get("manufacturer") == username or product.get("owner") == username:
+            is_involved = True
+        else:
+            for txn in txns:
+                if txn.get("from_user") == username or txn.get("to_user") == username:
+                    is_involved = True
+                    break
 
-    if not is_involved:
-        flash("You are not authorized to view this product.", "danger")
-        return redirect(url_for("dashboard"))
+        if not is_involved:
+            flash("You are not authorized to view this product.", "danger")
+            return redirect(url_for("dashboard"))
+
     puid        = product.get("puid", product.get("batch", ""))
     batch_count = products_col.count_documents({"puid": puid}) if puid else 0
 
@@ -1326,7 +1328,7 @@ def product_details(suid):
                            all_batches=all_batches,
                            scan_history=scan_history)
 
-# ── Recall Batch ──────────────────────────────────────────
+# â”€â”€ Recall Batch â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 @app.route("/recall/<puid>", methods=["GET", "POST"])
 @app.route("/recall/<puid>", methods=["GET"])
 @login_required
@@ -1489,7 +1491,7 @@ def api_recall_confirm():
     return jsonify({"ok": True, "redirect": url_for("batch_units", puid=puid)})
 
 
-# ── Transfer ──────────────────────────────────────────────
+# â”€â”€ Transfer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 @app.route("/transfer", methods=["GET"])
 @login_required
 @role_required("Manufacturer", "Distributor", "Retailer")
@@ -1680,7 +1682,7 @@ def api_transfer_confirm():
         block["uid"]         = block["suid"]
         block["ethereum_tx"] = tx_hash
 
-        # ── Idempotency: skip blocks already recorded (same block_id or same tx already processed) ──
+        # â”€â”€ Idempotency: skip blocks already recorded (same block_id or same tx already processed) â”€â”€
         if blocks_col.find_one({"block_id": block["block_id"]}):
             already_done += 1
             continue
@@ -1814,14 +1816,10 @@ def api_transfer_recover():
 
 
 @app.route("/scan")
-@login_required
-@role_required("Customer")
 def scan():
     return render_template("scan.html")
 
 @app.route("/verify", methods=["GET", "POST"])
-@login_required
-@role_required("Customer")
 def verify():
     puid = suid = None
     rescan_confirm = (request.form.get("rescan_confirm") or request.args.get("rescan_confirm") or "").strip().lower()
@@ -1851,7 +1849,7 @@ def verify():
             if uid_input.startswith("BC:") or (":" in uid_input and not (uid_input.startswith("http://") or uid_input.startswith("https://"))):
                 puid, suid = verify_qr_data(uid_input)
                 if not suid:
-                    flash("Invalid or tampered QR code — blockchain verification failed.", "danger")
+                    flash("Invalid or tampered QR code â€” blockchain verification failed.", "danger")
                     return redirect(url_for("scan"))
             else:
                 suid = uid_input.upper()
@@ -1872,17 +1870,17 @@ def verify():
         flash("Product not found.", "danger")
         return redirect(url_for("scan"))
 
-    # ── Check 1: PUID mismatch → counterfeit ──────────────
+    # â”€â”€ Check 1: PUID mismatch â†’ counterfeit â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     if puid and product.get("puid") and puid != product["puid"]:
-        flash("QR code is invalid — Product ID mismatch. Possible counterfeit!", "danger")
+        flash("QR code is invalid â€” Product ID mismatch. Possible counterfeit!", "danger")
         return render_template("verify.html",
                                product=enrich_product(product),
                                fail_heading="Possible Counterfeit",
-                               fail_emoji="🚨",
-                               fail_reason="Possible counterfeit: PUID mismatch — this unit does not belong to the scanned product.",
+                               fail_emoji="ðŸš¨",
+                               fail_reason="Possible counterfeit: PUID mismatch â€” this unit does not belong to the scanned product.",
                                is_recalled=False, is_expired=False)
 
-    # ── Check 2: Recalled ─────────────────────────────────
+    # â”€â”€ Check 2: Recalled â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     if product.get("status") == "recalled":
         products_col.update_one({"_id": product["_id"]}, {"$inc": {"scans": 1}})
         return render_template("verify.html",
@@ -1891,7 +1889,7 @@ def verify():
                                is_recalled=True,
                                is_expired=False)
 
-    # ── Check 3: Expired ──────────────────────────────────
+    # â”€â”€ Check 3: Expired â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     is_expired = False
     try:
         exp_date_val = datetime.strptime(product["exp_date"], "%Y-%m-%d").date()
@@ -1908,35 +1906,68 @@ def verify():
                                is_recalled=False,
                                is_expired=True)
 
-    # ── Check 4: Blockchain chain integrity ───────────────
+    # â”€â”€ Check 4: Blockchain chain integrity â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     if not validate_unit_chain(suid):
         flash("Blockchain ledger is missing or tampered. Cannot verify this product.", "danger")
         return render_template("verify.html",
                                product=enrich_product(product),
                                fail_heading="Ledger Tampered",
-                               fail_emoji="⚠️",
+                               fail_emoji="âš ï¸",
                                fail_reason="Blockchain ledger validation failed for this unit.",
                                is_recalled=False, is_expired=False)
 
-    # ── Check 5: Must be owned by Customer to show Genuine ─
-    # If the product has not completed the full supply chain
-    # (M → D → R → C) and reached a Customer, it is flagged as
-    # counterfeit — this is exactly how fake products spread:
-    # they are sold outside official channels, bypassing the chain.
+    # â”€â”€ Check 5: Product Ownership Status â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     owner_doc = users_col.find_one({"username": product["owner"]})
     owner_role = owner_doc["role"] if owner_doc else "Unknown"
+    viewer_role = session.get("role", "Customer")
 
-    if owner_role != "Customer":
+    if owner_role in ["Manufacturer", "Distributor"] and viewer_role == "Customer":
         return render_template("verify.html",
                                product=enrich_product(product),
                                fail_heading="Supply Chain Incomplete",
-                               fail_emoji="🛑",
-                               fail_reason="This product has not completed the supply chain.",
+                               fail_emoji="🚚",
+                               fail_reason="This product is still moving through the supply chain and is not yet available at a retail store.",
                                is_recalled=False, is_expired=False)
 
-    # ── Check 6: Duplicate scan check with user scan history ───────────────
+    if owner_role != "Customer":
+        # Product is Unsold (e.g., owned by Retailer)
+        # Skip duplicate checks and do not increment scans
+        return render_template("verify.html",
+                               product=enrich_product(product),
+                               fail_reason=None,
+                               is_recalled=False,
+                               is_expired=False,
+                               is_unsold=True)
+
+    # â”€â”€ Check 6: Sold Product Verification â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    username = session.get("username")
+    
+    # If the product is owned by a Customer, but the current viewer is a guest or a different customer
+    if username != product["owner"]:
+        now = int(time.time())
+        products_col.update_one({"_id": product["_id"]}, {"$inc": {"scans": 1}})
+        if username:
+            scans_col.insert_one({
+                "username": username,
+                "suid": suid,
+                "puid": product.get("puid"),
+                "name": product.get("name"),
+                "brand": product.get("brand"),
+                "timestamp": now,
+                "status": "DUPLICATE_UNAUTHORIZED"
+            })
+        updated_product = enrich_product(products_col.find_one({"_id": product["_id"]}))
+        return render_template(
+            "verify.html",
+            product=updated_product,
+            fail_heading="Already Claimed",
+            fail_emoji="âš ï¸",
+            fail_reason="This product has already been sold and claimed by another customer. If this is yours, please log in.",
+            is_recalled=False,
+            is_expired=False
+        )
+
     if product.get("scans", 0) > 0:
-        username = session["username"]
         # Check user's scan history
         prior_scan = scans_col.find_one(
             {"username": username, "suid": suid},
@@ -1952,7 +1983,7 @@ def verify():
             }
 
         if prior_scan:
-            # ── Branch A: Present in user scan history ──
+            # â”€â”€ Branch A: Present in user scan history â”€â”€
             # Pose the question only if user confirmation is not yet submitted
             if not rescan_confirm:
                 return render_template(
@@ -2000,13 +2031,13 @@ def verify():
                     "verify.html",
                     product=updated_product,
                     fail_heading="Duplicate Product",
-                    fail_emoji="⚠️",
+                    fail_emoji="âš ï¸",
                     fail_reason="This product code was previously scanned, but you indicated that you have not scanned it before. This suggests the QR code may be an unauthorized duplicate or counterfeit.",
                     is_recalled=False,
                     is_expired=False
                 )
         else:
-            # ── Branch B: NOT in user scan history ──
+            # â”€â”€ Branch B: NOT in user scan history â”€â”€
             # Directly flag as duplicate or counterfeit without posing any question
             now = int(time.time())
             products_col.update_one({"_id": product["_id"]}, {"$inc": {"scans": 1}})
@@ -2024,17 +2055,17 @@ def verify():
                 "verify.html",
                 product=updated_product,
                 fail_heading="Duplicate Product",
-                fail_emoji="⚠️",
+                fail_emoji="âš ï¸",
                 fail_reason="This product has already been scanned by another user and does not exist in your scan history. This indicates it might be an unauthorized duplicate or counterfeit.",
                 is_recalled=False,
                 is_expired=False
             )
 
-    # ── First time ever scanned (scans == 0) ──
+    # â”€â”€ First time ever scanned (scans == 0) â”€â”€
     now = int(time.time())
     products_col.update_one({"_id": product["_id"]}, {"$inc": {"scans": 1}})
     scans_col.insert_one({
-        "username": session["username"],
+        "username": username,
         "suid": suid,
         "puid": product.get("puid"),
         "name": product.get("name"),
@@ -2052,7 +2083,7 @@ def verify():
         is_rescan=False
     )
 
-# ── Search ────────────────────────────────────────────────
+# â”€â”€ Search â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 @app.route("/search", methods=["GET", "POST"])
 @login_required
 @role_required("Manufacturer")
@@ -2075,7 +2106,7 @@ def search():
             flash("Product not found.", "warning")
     return render_template("search.html", product=product)
 
-# ── Audit Ledger ──────────────────────────────────────────
+# â”€â”€ Audit Ledger â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 @app.route("/ledger")
 @login_required
 @role_required("Manufacturer", "Distributor", "Retailer", "Customer")
@@ -2094,7 +2125,7 @@ def ledger_view():
     return render_template("ledger.html", txns=txns, page=page,
                            total_pages=total_pages, total=total)
 
-# ── Profile ───────────────────────────────────────────────
+# â”€â”€ Profile â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 @app.route("/profile")
 @login_required
 def profile():
@@ -2133,7 +2164,7 @@ def profile():
                            active_cat=active_cat,
                            cat_counts=cat_counts)
 
-# ── Edit Profile ──────────────────────────────────────────
+# â”€â”€ Edit Profile â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 @app.route("/edit_profile", methods=["POST"])
 @login_required
 def edit_profile():
@@ -2151,7 +2182,7 @@ def edit_profile():
     flash("Profile updated successfully.", "success")
     return redirect(url_for("profile"))
 
-# ── Analytics (role-scoped — every role sees their own data) ──
+# â”€â”€ Analytics (role-scoped â€” every role sees their own data) â”€â”€
 @app.route("/analytics")
 @login_required
 def analytics():
@@ -2201,7 +2232,7 @@ def analytics():
                            categories=categories_data,
                            total_products=total_products)
 
-# ── Bulk Create Products (CSV) ───────────────────────────
+# â”€â”€ Bulk Create Products (CSV) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 @app.route("/bulk_create_products")
 @login_required
 @role_required("Manufacturer")
@@ -2351,8 +2382,83 @@ def api_product_bulk_blueprints():
 
     return jsonify({"ok": True, "message": f"{inserted} blueprints saved successfully!"})
 
+# â”€â”€ Checkout Flow (Guest to Customer) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+@app.route("/checkout/<suid>", methods=["GET", "POST"])
+@login_required
+@role_required("Customer")
+def checkout(suid):
+    product = products_col.find_one({"suid": suid})
+    if not product:
+        flash("Product not found.", "danger")
+        return redirect(url_for("scan"))
+
+    owner_doc = users_col.find_one({"username": product["owner"]})
+    owner_role = owner_doc["role"] if owner_doc else "Unknown"
+
+    if owner_role == "Customer":
+        flash("This product has already been claimed.", "warning")
+        return redirect(url_for("verify", uid=suid))
+
+    if request.method == "POST":
+        now = int(time.time())
+        username = session["username"]
+        old_owner = product["owner"]
+
+        # Transfer ownership & increment scans
+        products_col.update_one(
+            {"_id": product["_id"]},
+            {
+                "$set": {"owner": username},
+                "$inc": {"scans": 1}
+            }
+        )
+
+        # Log on custom blockchain block
+        block = add_block(
+            puid=product["puid"],
+            suid=suid,
+            action="TRANSFERRED",
+            from_user=old_owner,
+            to_user=username,
+            timestamp=now
+        )
+        
+        # Log transaction
+        tx_id = "TX-" + str(uuid.uuid4()).replace("-", "")[:8].upper()
+        transactions_col.insert_one({
+            "_id": tx_id,
+            "suid": suid,
+            "uid": suid,
+            "puid": product["puid"],
+            "from_user": old_owner,
+            "to_user": username,
+            "quantity": 1,
+            "timestamp": now,
+            "action": "TRANSFERRED",
+            "block_id": block["block_id"],
+            "block_hash": block["block_hash"],
+            "ethereum_tx": block.get("ethereum_tx")
+        })
+
+        # Insert first genuine scan
+        scans_col.insert_one({
+            "username": username,
+            "suid": suid,
+            "puid": product.get("puid"),
+            "name": product.get("name"),
+            "brand": product.get("brand"),
+            "timestamp": now,
+            "status": "GENUINE"
+        })
+
+        flash("Product successfully purchased and claimed!", "success")
+        return redirect(url_for("dashboard"))
+
+    return render_template("checkout.html", product=enrich_product(product))
+
 if __name__ == "__main__":
     os.makedirs(QR_DIR, exist_ok=True)
     os.makedirs(IMG_DIR, exist_ok=True)
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=False, threaded=True)
+
