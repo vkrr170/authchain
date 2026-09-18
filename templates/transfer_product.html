@@ -102,7 +102,7 @@
             {% if p.image %}
             <img src="{{ url_for('static', filename='product_images/' + p.image) }}"
                  style="width:52px;height:52px;object-fit:contain;background:var(--surface);border-radius:8px;border:1px solid var(--border);"
-                 onerror="this.style.display='none'"/>
+                 />
             {% else %}
             <div style="width:52px;height:52px;background:var(--surface);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;">📦</div>
             {% endif %}

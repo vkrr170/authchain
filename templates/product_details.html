@@ -33,7 +33,7 @@
       {% if product.image and product.image != 'default.png' %}
       <img src="{{ url_for('static', filename='product_images/' + product.image) }}"
            style="width:100%;height:260px;object-fit:contain;background:var(--surface2);border-radius:10px;margin-bottom:20px;" alt="Product"
-           onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
+           />
       <div style="width:100%;height:200px;background:var(--surface2);border-radius:10px;display:none;align-items:center;justify-content:center;font-size:4rem;margin-bottom:20px;">📦</div>
       {% else %}
       <div style="width:100%;height:200px;background:var(--surface2);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:4rem;margin-bottom:20px;">📦</div>

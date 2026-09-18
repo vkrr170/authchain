@@ -24,7 +24,7 @@
           {% if product.image %}
           <img src="{{ url_for('static', filename='product_images/' + product.image) }}"
                style="width:80px;height:80px;object-fit:contain;background:var(--surface2);border-radius:10px;border:1px solid var(--border);"
-               onerror="this.style.display='none'" />
+                />
           {% else %}
           <div style="width:80px;height:80px;background:var(--surface2);border-radius:10px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:2rem;">📦</div>
           {% endif %}
