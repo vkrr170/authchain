@@ -385,7 +385,7 @@ def generate_qr(puid, suid, block_id=None):
         block_id = block["block_id"] if block else ""
     data = f"BC:{puid}:{suid}:{block_id}"
     img  = qrcode.make(data)
-    img.save(os.path.join(app.root_path, "static", "qrcodes", f"{suid}.png"))
+    img.save(os.path.join(QR_DIR, f"{suid}.png"))
 
 def verify_qr_data(qr_data):
     try:
@@ -880,7 +880,7 @@ def api_product_upload_image():
     if not file or not file.filename or not allowed_file(file.filename):
         return jsonify({"ok": True, "filename": ""})
     filename = secure_filename(file.filename)
-    file.save(os.path.join(app.root_path, "static", "product_images", filename))
+    file.save(os.path.join(IMG_DIR, filename))
     return jsonify({"ok": True, "filename": filename})
 
 # â”€â”€ Prepare signed block data for MetaMask minting â”€â”€â”€â”€â”€â”€â”€â”€
@@ -1246,7 +1246,7 @@ def api_product_edit_blueprint(bp_id):
     file = request.files.get("image")
     if file and file.filename and allowed_file(file.filename):
         image_filename = secure_filename(file.filename)
-        file.save(os.path.join(app.root_path, "static", "product_images", image_filename))
+        file.save(os.path.join(IMG_DIR, image_filename))
         update_fields["image"] = image_filename
 
     # Update blueprint
@@ -2320,7 +2320,7 @@ def api_product_blueprint_create():
     file = request.files.get("image")
     if file and file.filename and allowed_file(file.filename):
         image_filename = secure_filename(file.filename)
-        file.save(os.path.join(app.root_path, "static", "product_images", image_filename))
+        file.save(os.path.join(IMG_DIR, image_filename))
     else:
         return jsonify({"ok": False, "error": "Valid product image is required"}), 400
 
