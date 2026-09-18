@@ -27,7 +27,11 @@ except ImportError:
 
 from flask_wtf.csrf import CSRFProtect, CSRFError
 
+from werkzeug.middleware.proxy_fix import ProxyFix
+
 app = Flask(__name__)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
+
 app.secret_key = os.environ.get("SECRET_KEY") or "authchain-session-secret-key-prod-9a8b7c6d5e"
 app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=14)
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
@@ -517,14 +521,14 @@ def register():
         if not phone:
             flash("Phone number is required.", "danger")
             return redirect(url_for("register"))
+        if not role:
+            flash("Role is required.", "danger")
+            return redirect(url_for("register"))
         if not company and role != "Customer":
             flash("Company is required.", "danger")
             return redirect(url_for("register"))
         if not address:
             flash("Address is required.", "danger")
-            return redirect(url_for("register"))
-        if not role:
-            flash("Role is required.", "danger")
             return redirect(url_for("register"))
         if not password:
             flash("Password is required.", "danger")

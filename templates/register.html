@@ -255,7 +255,7 @@
 
   companyInput.addEventListener('blur', () => {
     const msgEl = document.getElementById('company-msg');
-    if (roleSelect.value !== 'Customer' && !companyInput.value.trim()) {
+    if (roleSelect.value && roleSelect.value !== 'Customer' && !companyInput.value.trim()) {
       setFieldState(companyInput, msgEl, 'error', 'Company is required.');
     } else if (!companyInput.classList.contains('error')) {
       setFieldState(companyInput, msgEl, 'ok', '');
@@ -321,7 +321,7 @@
       }
     });
 
-    if (roleSelect.value !== 'Customer' && !companyInput.value.trim()) {
+    if (roleSelect.value && roleSelect.value !== 'Customer' && !companyInput.value.trim()) {
       setFieldState(companyInput, document.getElementById('company-msg'), 'error', 'Company is required.');
       valid = false;
     }
